@@ -38,7 +38,7 @@ function handleDragStart(e) {
     e.dataTransfer.effectAllowed = 'copy';
     
     // 高亮目标区域
-    const graphPanel = document.querySelector('.graph-panel');
+    const graphPanel = document.querySelector('.graph-section');
     if (graphPanel) {
         graphPanel.classList.add('drag-target');
     }
@@ -49,7 +49,7 @@ function handleDragEnd(e) {
     e.target.style.opacity = '1';
     
     // 移除目标区域高亮
-    const graphPanel = document.querySelector('.graph-panel');
+    const graphPanel = document.querySelector('.graph-section');
     if (graphPanel) {
         graphPanel.classList.remove('drag-target');
     }
@@ -57,24 +57,84 @@ function handleDragEnd(e) {
 
 // 为右侧图表区域添加拖放支持
 function setupGraphDropZone() {
-    const graphPanel = document.querySelector('.graph-panel');
-    if (!graphPanel) return;
+    const graphPanel = document.querySelector('.graph-section');
+    if (!graphPanel) {
+        console.error('找不到图表区域 .graph-section');
+        return;
+    }
+    
+    console.log('✅ 图表拖拽区域初始化成功');
+    
+    // 添加提示文本
+    const hintDiv = document.createElement('div');
+    hintDiv.id = 'graph-hint';
+    hintDiv.innerHTML = `
+        <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #9CA3AF;
+            font-size: 14px;
+            z-index: 50;
+            pointer-events: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: 2px dashed #D1D5DB;
+            text-align: center;
+            max-width: 280px;
+            transition: opacity 0.3s ease;
+        ">
+            💡 拖拽AI回复消息到此处<br/>生成动态关系图
+        </div>
+    `;
+    graphPanel.appendChild(hintDiv);
     
     graphPanel.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
+        console.log('🟡 拖拽悬停在图表区域');
+    });
+    
+    graphPanel.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        console.log('🟢 进入图表拖拽区域');
+    });
+    
+    graphPanel.addEventListener('dragleave', (e) => {
+        console.log('🔴 离开图表拖拽区域');
     });
     
     graphPanel.addEventListener('drop', (e) => {
         e.preventDefault();
         const content = e.dataTransfer.getData('text/plain');
         
+        console.log('🎯 拖拽释放事件触发');
+        console.log('📝 内容长度:', content ? content.length : 0);
+        console.log('📄 内容预览:', content ? content.substring(0, 200) + '...' : '空内容');
+        
         if (content && content.trim()) {
-            // 生成动态图
-            generateGraphFromContent(content);
+            console.log('🚀 开始生成动态图表...');
             
-            // 显示提示
-            showDropNotification('动态关系图已生成！');
+            // 检查函数是否存在
+            if (typeof generateGraphFromContent === 'function') {
+                try {
+                    generateGraphFromContent(content);
+                    showDropNotification('✅ 动态关系图生成成功！');
+                    console.log('✅ 图表生成完成');
+                } catch (error) {
+                    console.error('❌ 图表生成出错:', error);
+                    showDropNotification('❌ 图表生成失败: ' + error.message);
+                }
+            } else {
+                console.error('❌ generateGraphFromContent 函数未找到');
+                showDropNotification('❌ 生成图表失败：函数未加载');
+            }
+        } else {
+            console.warn('⚠️ 拖拽内容为空');
+            showDropNotification('⚠️ 拖拽内容为空，无法生成图表');
         }
     });
 }
@@ -110,59 +170,207 @@ function showDropNotification(message) {
 // ========== 应用初始化 ==========
 document.addEventListener('DOMContentLoaded', function() {
     console.log('应用初始化...');
+    
+    // 等待DOM完全加载后再绑定事件
+    setTimeout(() => {
+        initializeEventHandlers();
+    }, 100);
+    
     loadConversations();
     loadCurrentConversation();
-    
-    // 绑定发送按钮事件
-    const sendButton = document.getElementById('sendMessage');
-    if (sendButton) {
-        sendButton.addEventListener('click', sendMessage);
-    }
-    
-    // 绑定回车键发送
-    const userInput = document.getElementById('userInput');
-    if (userInput) {
-        userInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-    }
-    
-    // 初始化个人资料
     loadUserProfile();
-    
-    // 设置拖放区域
     setupGraphDropZone();
+    setupEventListeners();
     
     console.log('应用初始化完成');
+    
+    // 测试Enter键功能
+    setTimeout(() => {
+        testEnterKeyFunction();
+    }, 500);
 });
+
+// 专门的事件处理器初始化函数
+function initializeEventHandlers() {
+    console.log('🔧 开始初始化事件处理器...');
+    
+    // 调试：检查所有关键元素是否存在
+    debugElementsStatus();
+    
+    // 绑定发送按钮事件
+    const sendButton = document.getElementById('sendBtn');
+    if (sendButton) {
+        console.log('✅ 找到发送按钮，绑定点击事件');
+        // 移除可能存在的旧事件监听器
+        sendButton.removeEventListener('click', handleSendClick);
+        sendButton.addEventListener('click', handleSendClick);
+    } else {
+        console.error('❌ 找不到sendBtn元素');
+    }
+    
+    // 绑定输入框Enter键事件
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+        console.log('✅ 找到输入框，绑定Enter键事件');
+        // 移除可能存在的旧事件监听器
+        chatInput.removeEventListener('keydown', handleEnterKey);
+        chatInput.addEventListener('keydown', handleEnterKey);
+        
+        // 同时绑定keypress作为备选
+        chatInput.removeEventListener('keypress', handleEnterKeyPress);
+        chatInput.addEventListener('keypress', handleEnterKeyPress);
+        
+        // 为输入框添加焦点，确保可以接收键盘事件
+        chatInput.focus();
+    } else {
+        console.error('❌ 找不到chatInput元素');
+    }
+    
+    console.log('🎉 事件处理器初始化完成');
+    
+    // 添加全局键盘事件监听器作为备选方案
+    document.addEventListener('keydown', function(e) {
+        // 只在输入框获得焦点时处理Enter键
+        const activeElement = document.activeElement;
+        if (activeElement && activeElement.id === 'chatInput') {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🌐 全局Enter键监听器触发');
+                sendMessage();
+            }
+        }
+    });
+}
+
+// 调试函数：检查元素状态
+function debugElementsStatus() {
+    console.log('🔍 检查关键元素状态...');
+    
+    const elements = [
+        { id: 'sendBtn', name: '发送按钮' },
+        { id: 'chatInput', name: '输入框' },
+        { id: 'chatMessages', name: '消息容器' },
+        { id: 'graph-container', name: '图表容器' }
+    ];
+    
+    elements.forEach(({ id, name }) => {
+        const element = document.getElementById(id);
+        if (element) {
+            console.log(`✅ ${name} (${id}): 存在`, element);
+        } else {
+            console.error(`❌ ${name} (${id}): 不存在`);
+        }
+    });
+}
+
+// 发送按钮点击处理函数
+function handleSendClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🖱️ 发送按钮被点击');
+    sendMessage();
+}
+
+// Enter键按下处理函数 (keydown)
+function handleEnterKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🔥 Enter键被按下 (keydown)');
+        sendMessage();
+    }
+}
+
+// Enter键按下处理函数 (keypress) - 备选方案
+function handleEnterKeyPress(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🔥 Enter键被按下 (keypress)');
+        sendMessage();
+    }
+}
 
 // ========== 用户资料管理 ==========
 function loadUserProfile() {
-    document.getElementById('profileName').textContent = userProfile.name;
-    document.getElementById('profileStatus').textContent = userProfile.status;
+    // 从localStorage加载用户资料
+    const saved = localStorage.getItem('userProfile');
+    if (saved) {
+        try {
+            userProfile = JSON.parse(saved);
+            console.log('加载用户资料:', userProfile);
+        } catch (error) {
+            console.error('解析用户资料失败:', error);
+            userProfile = { name: '用户', avatar: '', status: '在线', email: '', bio: '', location: '' };
+        }
+    } else {
+        // 使用默认值
+        userProfile = { name: '用户', avatar: '', status: '在线', email: '', bio: '', location: '' };
+        saveUserProfile(); // 保存默认配置
+    }
+    
+    // 更新UI显示
+    updateUserProfileUI();
+}
+
+function updateUserProfileUI() {
+    // 安全地更新元素
+    const profileName = document.getElementById('profileName');
+    const profileStatus = document.getElementById('profileStatus');
+    const profileAvatarImg = document.getElementById('profileAvatarImg');
+    const profileAvatarText = document.getElementById('profileAvatarText');
+    const modalAvatarImg = document.getElementById('modalAvatarImg');
+    const modalAvatarText = document.getElementById('modalAvatarText');
+    
+    if (profileName) profileName.textContent = userProfile.name;
+    if (profileStatus) profileStatus.textContent = userProfile.status;
     
     if (userProfile.avatar) {
-        document.getElementById('profileAvatarImg').src = userProfile.avatar;
-        document.getElementById('profileAvatarImg').style.display = 'block';
-        document.getElementById('profileAvatarText').style.display = 'none';
+        if (profileAvatarImg) {
+            profileAvatarImg.src = userProfile.avatar;
+            profileAvatarImg.style.display = 'block';
+        }
+        if (profileAvatarText) profileAvatarText.style.display = 'none';
         
-        document.getElementById('modalAvatarImg').src = userProfile.avatar;
-        document.getElementById('modalAvatarImg').style.display = 'block';
-        document.getElementById('modalAvatarText').style.display = 'none';
+        if (modalAvatarImg) {
+            modalAvatarImg.src = userProfile.avatar;
+            modalAvatarImg.style.display = 'block';
+        }
+        if (modalAvatarText) modalAvatarText.style.display = 'none';
+    } else {
+        if (profileAvatarImg) profileAvatarImg.style.display = 'none';
+        if (profileAvatarText) {
+            profileAvatarText.style.display = 'block';
+            profileAvatarText.textContent = userProfile.name.charAt(0).toUpperCase();
+        }
+        
+        if (modalAvatarImg) modalAvatarImg.style.display = 'none';
+        if (modalAvatarText) {
+            modalAvatarText.style.display = 'block';
+            modalAvatarText.textContent = userProfile.name.charAt(0).toUpperCase();
+        }
     }
     
     // 填充表单
-    document.getElementById('userName').value = userProfile.name;
-    document.getElementById('userEmail').value = userProfile.email;
-    document.getElementById('userBio').value = userProfile.bio;
-    document.getElementById('userLocation').value = userProfile.location;
+    const userName = document.getElementById('userName');
+    const userEmail = document.getElementById('userEmail');
+    const userBio = document.getElementById('userBio');
+    const userLocation = document.getElementById('userLocation');
+    
+    if (userName) userName.value = userProfile.name || '';
+    if (userEmail) userEmail.value = userProfile.email || '';
+    if (userBio) userBio.value = userProfile.bio || '';
+    if (userLocation) userLocation.value = userProfile.location || '';
 }
 
 function saveUserProfile() {
-    localStorage.setItem('user_profile', JSON.stringify(userProfile));
+    try {
+        localStorage.setItem('userProfile', JSON.stringify(userProfile));
+        console.log('保存用户资料:', userProfile);
+    } catch (error) {
+        console.error('保存用户资料失败:', error);
+    }
 }
 
 function handleAvatarUpload(event) {
@@ -202,13 +410,18 @@ function closeProfileModal() {
 function saveProfile(event) {
     event.preventDefault();
     
-    userProfile.name = document.getElementById('userName').value;
-    userProfile.email = document.getElementById('userEmail').value;
-    userProfile.bio = document.getElementById('userBio').value;
-    userProfile.location = document.getElementById('userLocation').value;
+    const userName = document.getElementById('userName');
+    const userEmail = document.getElementById('userEmail');
+    const userBio = document.getElementById('userBio');
+    const userLocation = document.getElementById('userLocation');
+    
+    if (userName) userProfile.name = userName.value;
+    if (userEmail) userProfile.email = userEmail.value;
+    if (userBio) userProfile.bio = userBio.value;
+    if (userLocation) userProfile.location = userLocation.value;
     
     saveUserProfile();
-    loadUserProfile();
+    updateUserProfileUI();
     closeProfileModal();
     
     alert('个人资料已保存！');
@@ -227,10 +440,19 @@ function toggleStatus() {
 // ========== 事件监听器设置 ==========
 function setupEventListeners() {
     const chatInput = document.getElementById('chatInput');
-    chatInput.addEventListener('input', function () {
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-    });
+    if (chatInput) {
+        console.log('✅ 设置输入框高度自适应');
+        chatInput.addEventListener('input', function () {
+            this.style.height = 'auto';
+            const newHeight = Math.min(this.scrollHeight, 120);
+            this.style.height = Math.max(newHeight, 50) + 'px';
+        });
+        
+        // 确保初始高度正确
+        chatInput.style.height = '50px';
+    } else {
+        console.error('❌ setupEventListeners: 找不到chatInput元素');
+    }
 }
 
 // ========== 对话管理 ==========
@@ -308,11 +530,39 @@ function loadConversation(conversationId) {
         displayMessage(message.content, message.role, new Date(message.timestamp));
     });
     
+    // 重置输入框高度
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+        chatInput.style.height = '50px';
+        chatInput.value = '';
+    }
+    
     scrollToBottom();
 }
 
 function saveConversations() {
     localStorage.setItem('deepseek_multi_bubble_conversations', JSON.stringify(conversations));
+}
+
+// 加载当前对话
+function loadCurrentConversation() {
+    console.log('🔄 加载当前对话...');
+    
+    // 如果没有对话，创建一个新对话
+    if (conversations.length === 0) {
+        console.log('📝 没有对话历史，创建第一个对话');
+        startNewConversation();
+        return;
+    }
+    
+    // 如果没有设置当前对话ID，选择第一个对话
+    if (!currentConversationId) {
+        currentConversationId = conversations[0].id;
+        console.log('📌 设置当前对话ID:', currentConversationId);
+    }
+    
+    // 加载选中的对话
+    loadConversation(currentConversationId);
 }
 
 // ========== 消息处理 ==========
@@ -396,36 +646,93 @@ function updateConversationTitle(conversationId, newTitle) {
 
 // ========== DeepSeek API调用 ==========
 async function sendMessage(messageText = null) {
+    console.log('📤 sendMessage函数被调用');
     const chatInput = document.getElementById('chatInput');
     const message = messageText || chatInput.value.trim();
     
-    if (!message || isStreaming) return;
+    console.log('📝 消息内容:', message);
+    console.log('🔄 当前streaming状态:', isStreaming);
+    
+    if (!message || isStreaming) {
+        console.log('⚠️ 消息为空或正在streaming，退出');
+        return;
+    }
     
     isStreaming = true;
-    chatInput.value = '';
-    chatInput.style.height = 'auto';
+    
+    // 重置输入框
+    if (chatInput) {
+        chatInput.value = '';
+        chatInput.style.height = 'auto';
+        // 确保按钮位置正确
+        setTimeout(() => {
+            chatInput.style.height = '50px';
+        }, 10);
+    }
     
     // 显示用户消息
     const timestamp = new Date();
     displayMessage(message, 'user', timestamp);
     
     // 保存用户消息到当前对话
-    const conversation = conversations.find(c => c.id === currentConversationId);
-    if (conversation) {
-        conversation.messages.push({
-            role: 'user',
-            content: message,
-            timestamp: timestamp.toISOString()
-        });
-        
-        // 如果是新对话的第一条消息，更新标题
-        if (conversation.messages.length === 1) {
-            const title = message.length > 20 ? message.substring(0, 20) + '...' : message;
-            updateConversationTitle(currentConversationId, title);
-        }
+    let conversation = conversations.find(c => c.id === currentConversationId);
+    
+    // 如果没有找到对话，创建一个新对话
+    if (!conversation) {
+        console.log('🆕 未找到当前对话，创建新对话');
+        conversation = {
+            id: Date.now().toString(),
+            title: '新对话',
+            messages: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        conversations.unshift(conversation);
+        currentConversationId = conversation.id;
+        saveConversations();
+        loadConversations();
     }
     
+    conversation.messages.push({
+        role: 'user',
+        content: message,
+        timestamp: timestamp.toISOString()
+    });
+    
+    // 如果是对话的第一条消息，更新标题
+    if (conversation.messages.length === 1) {
+        const title = message.length > 20 ? message.substring(0, 20) + '...' : message;
+        updateConversationTitle(currentConversationId, title);
+    }
+    
+    console.log('💾 当前对话状态:', {
+        id: conversation.id,
+        title: conversation.title,
+        messageCount: conversation.messages.length
+    });
+    
     showLoading();
+    
+    // 构建请求数据
+    const requestData = {
+        model: "deepseek-chat",
+        messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            ...conversation.messages.map(msg => ({
+                role: msg.role,
+                content: msg.content
+            }))
+        ],
+        stream: true,
+        temperature: 0.7,
+        max_tokens: 2048
+    };
+    
+    console.log('🌐 API请求详情:');
+    console.log('📍 URL:', DEEPSEEK_API_URL);
+    console.log('🔑 API Key前6位:', DEEPSEEK_API_KEY.substring(0, 6) + '...');
+    console.log('📦 请求数据:', requestData);
+    console.log('💬 消息数量:', requestData.messages.length);
     
     try {
         const response = await fetch(DEEPSEEK_API_URL, {
@@ -434,23 +741,16 @@ async function sendMessage(messageText = null) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
             },
-            body: JSON.stringify({
-                model: "deepseek-chat",
-                messages: [
-                    { role: "system", content: SYSTEM_PROMPT },
-                    ...conversation.messages.map(msg => ({
-                        role: msg.role,
-                        content: msg.content
-                    }))
-                ],
-                stream: true,
-                temperature: 0.7,
-                max_tokens: 2048
-            })
+            body: JSON.stringify(requestData)
         });
         
+        console.log('📡 API响应状态:', response.status);
+        console.log('📡 API响应头:', response.headers);
+        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorText = await response.text();
+            console.error('🚨 API错误响应:', errorText);
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
         
         // 创建AI消息元素
@@ -558,8 +858,26 @@ async function sendMessage(messageText = null) {
         generateExampleGraph(fullResponse);
         
     } catch (error) {
-        console.error('Error:', error);
-        displayMessage('抱歉，发生了错误。请稍后重试。', 'assistant');
+        console.error('🚨 API调用出错详情:', error);
+        console.error('🚨 错误类型:', error.name);
+        console.error('🚨 错误消息:', error.message);
+        console.error('🚨 完整错误:', error);
+        
+        let errorMessage = '抱歉，发生了错误。';
+        
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            errorMessage = '网络连接失败，请检查网络连接后重试。';
+        } else if (error.message.includes('401')) {
+            errorMessage = 'API密钥无效，请检查配置。';
+        } else if (error.message.includes('429')) {
+            errorMessage = 'API调用次数超限，请稍后重试。';
+        } else if (error.message.includes('500')) {
+            errorMessage = '服务器内部错误，请稍后重试。';
+        } else {
+            errorMessage = `发生了错误：${error.message}`;
+        }
+        
+        displayMessage(errorMessage, 'assistant');
     } finally {
         hideLoading();
         isStreaming = false;
@@ -717,4 +1035,38 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return `<p>${div.innerHTML}</p>`;
+}
+
+// 测试Enter键功能的函数
+function testEnterKeyFunction() {
+    console.log('🧪 开始测试Enter键功能...');
+    
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+        console.log('📝 输入框状态:', {
+            id: chatInput.id,
+            tagName: chatInput.tagName,
+            type: chatInput.type,
+            placeholder: chatInput.placeholder,
+            disabled: chatInput.disabled,
+            readonly: chatInput.readOnly,
+            focused: document.activeElement === chatInput
+        });
+        
+        // 手动触发一个测试事件
+        console.log('🔧 手动测试键盘事件...');
+        const testEvent = new KeyboardEvent('keydown', {
+            key: 'Enter',
+            code: 'Enter',
+            keyCode: 13,
+            which: 13,
+            bubbles: true,
+            cancelable: true
+        });
+        
+        chatInput.dispatchEvent(testEvent);
+        
+    } else {
+        console.error('❌ 测试失败：找不到输入框');
+    }
 } 

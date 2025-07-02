@@ -3,47 +3,99 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(124, 58, 237, 0.3) transparent;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: linear-gradient(135deg, #b57eda 0%, #bda9cf 50%, #d9d6dc 100%);
+    font-family: "Microsoft YaHei", "微软雅黑", "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Heiti SC", "WenQuanYi Micro Hei", sans-serif;
+    background: -webkit-linear-gradient(135deg, rgba(181, 126, 218, 0.8) 0%, rgba(189, 169, 207, 0.8) 50%, rgba(217, 214, 220, 0.8) 100%);
+    background: -moz-linear-gradient(135deg, rgba(181, 126, 218, 0.8) 0%, rgba(189, 169, 207, 0.8) 50%, rgba(217, 214, 220, 0.8) 100%);
+    background: -ms-linear-gradient(135deg, rgba(181, 126, 218, 0.8) 0%, rgba(189, 169, 207, 0.8) 50%, rgba(217, 214, 220, 0.8) 100%);
+    background: -o-linear-gradient(135deg, rgba(181, 126, 218, 0.8) 0%, rgba(189, 169, 207, 0.8) 50%, rgba(217, 214, 220, 0.8) 100%);
+    background: linear-gradient(135deg, rgba(181, 126, 218, 0.8) 0%, rgba(189, 169, 207, 0.8) 50%, rgba(217, 214, 220, 0.8) 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 20px;
     color: #333;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 /* ========== 主容器布局 ========== */
 .container {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
     display: flex;
     width: 100%;
     max-width: 1400px;
     height: 85vh;
     min-height: 700px;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 20px;
-    box-shadow: 0 25px 50px rgba(139, 92, 246, 0.3);
+    background: rgba(255, 255, 255, 0.85);
+    -webkit-border-radius: 28px;
+    -moz-border-radius: 28px;
+    border-radius: 28px;
+    -webkit-box-shadow: 0 25px 50px rgba(139, 92, 246, 0.25);
+    -moz-box-shadow: 0 25px 50px rgba(139, 92, 246, 0.25);
+    box-shadow: 0 25px 50px rgba(139, 92, 246, 0.25);
     overflow: hidden;
-    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
+    position: relative;
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    -o-transform: translateZ(0);
+    transform: translateZ(0);
 }
 
 /* ========== 侧边栏样式 ========== */
 .sidebar {
     width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+    background: -webkit-linear-gradient(180deg, #7C3AED 0%, #8B5CF6 50%, #A855F7 100%);
+    background: -moz-linear-gradient(180deg, #7C3AED 0%, #8B5CF6 50%, #A855F7 100%);
+    background: -ms-linear-gradient(180deg, #7C3AED 0%, #8B5CF6 50%, #A855F7 100%);
+    background: -o-linear-gradient(180deg, #7C3AED 0%, #8B5CF6 50%, #A855F7 100%);
     background: linear-gradient(180deg, #7C3AED 0%, #8B5CF6 50%, #A855F7 100%);
     color: white;
     padding: 25px;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
     display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -moz-flex-direction: column;
+    -ms-flex-direction: column;
     flex-direction: column;
     box-shadow: 4px 0 15px rgba(124, 58, 237, 0.2);
+    overflow-x: hidden;
+    flex-shrink: 0;
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    -o-transform: translateZ(0);
+    transform: translateZ(0);
 }
 
 .sidebar-header {
     text-align: center;
     margin-bottom: 30px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .sidebar-header h2 {
@@ -61,11 +113,13 @@ body {
 /* 个人资料区域 */
 .profile-section {
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
+    border-radius: 20px;
     padding: 20px;
     margin-bottom: 20px;
     text-align: center;
     border: 1px solid rgba(255, 255, 255, 0.2);
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
 }
 
 .profile-header {
@@ -89,6 +143,9 @@ body {
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    border-radius: 50%;
 }
 
 .profile-avatar:hover {
@@ -99,6 +156,10 @@ body {
 .profile-avatar img {
     width: 100%;
     height: 100%;
+    -webkit-object-fit: cover;
+    -moz-object-fit: cover;
+    -ms-object-fit: cover;
+    -o-object-fit: cover;
     object-fit: cover;
     border-radius: 50%;
 }
@@ -120,7 +181,7 @@ body {
     opacity: 0.9;
     cursor: pointer;
     padding: 2px 8px;
-    border-radius: 12px;
+    border-radius: 16px;
     background: rgba(255, 255, 255, 0.2);
     display: inline-block;
     margin-top: 4px;
@@ -136,11 +197,29 @@ body {
     flex: 1;
     overflow-y: auto;
     margin-bottom: 20px;
+    min-height: 0;
+    position: relative;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    -o-transform: translateZ(0);
+    transform: translateZ(0);
 }
 
 .conversation-list {
     flex: 1;
     overflow-y: auto;
+    min-height: 0;
+    padding-right: 4px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    -o-transform: translateZ(0);
+    transform: translateZ(0);
 }
 
 .conversations-header {
@@ -162,7 +241,7 @@ body {
     color: white;
     border: 2px solid rgba(255, 255, 255, 0.3);
     padding: 8px 16px;
-    border-radius: 10px;
+    border-radius: 16px;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -177,17 +256,26 @@ body {
 .conversation-item {
     padding: 12px 15px;
     margin-bottom: 8px;
-    border-radius: 10px;
+    border-radius: 16px;
     cursor: pointer;
     transition: all 0.3s ease;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
+    will-change: transform, background-color;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
+    -ms-transform: translate3d(0, 0, 0);
+    -o-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
 }
 
 .conversation-item:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: translateX(5px);
+    transform: translateX(3px);
+    transition: all 0.2s ease;
 }
 
 .conversation-item.active {
@@ -233,7 +321,7 @@ body {
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 10px 15px;
-    border-radius: 8px;
+    border-radius: 16px;
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -264,9 +352,18 @@ body {
 /* ========== 主聊天区域 ========== */
 .main-content {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     position: relative;
+    will-change: auto;
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -moz-box-flex: 1;
+    -moz-flex: 1;
+    -ms-flex: 1;
+    transform: translateZ(0);
+    overflow: hidden;
 }
 
 .chat-header {
@@ -277,6 +374,8 @@ body {
     justify-content: space-between;
     align-items: center;
     color: #374151;
+    flex-shrink: 0;
+    min-height: 80px;
 }
 
 .chat-header h1 {
@@ -296,7 +395,7 @@ body {
     color: white;
     border: none;
     padding: 10px 16px;
-    border-radius: 8px;
+    border-radius: 16px;
     font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -311,8 +410,10 @@ body {
 /* 聊天内容分栏 */
 .chat-area {
     flex: 1;
+    min-height: 0;
     display: flex;
     overflow: hidden;
+    position: relative;
 }
 
 /* 左侧对话区 */
@@ -323,6 +424,15 @@ body {
     background: linear-gradient(135deg, #FAFAFA 0%, #F9FAFB 100%);
     display: flex;
     flex-direction: column;
+    min-height: 0;
+    padding-right: 30px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    -o-transform: translateZ(0);
+    transform: translateZ(0);
 }
 
 /* 聊天消息区域 */
@@ -338,6 +448,11 @@ body {
     display: flex;
     align-items: flex-start;
     animation: fadeInUp 0.4s ease;
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
+    -ms-transform: translate3d(0, 0, 0);
+    -o-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
 }
 
 .message.user {
@@ -428,6 +543,9 @@ body {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     transition: opacity 0.3s ease;
     overflow: hidden;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    border-radius: 50%;
 }
 
 .message.user .message-avatar {
@@ -443,6 +561,10 @@ body {
 .message-avatar img {
     width: 100%;
     height: 100%;
+    -webkit-object-fit: cover;
+    -moz-object-fit: cover;
+    -ms-object-fit: cover;
+    -o-object-fit: cover;
     object-fit: cover;
     border-radius: 50%;
 }
@@ -685,6 +807,8 @@ body {
     padding: 20px 25px;
     border-top: 2px solid #E5E7EB;
     background: white;
+    flex-shrink: 0;
+    position: relative;
 }
 
 .chat-input-wrapper {
@@ -693,12 +817,14 @@ body {
     align-items: flex-end;
     max-width: 1000px;
     margin: 0 auto;
+    position: relative;
+    min-height: 50px;
 }
 
 .chat-input {
     flex: 1;
     border: 2px solid #D1D5DB;
-    border-radius: 15px;
+    border-radius: 20px;
     padding: 12px 18px;
     font-family: inherit;
     font-size: 15px;
@@ -706,8 +832,12 @@ body {
     resize: none;
     max-height: 120px;
     min-height: 50px;
+    height: 50px;
     outline: none;
-    transition: all 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    box-sizing: border-box;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
 }
 
 .chat-input:focus {
@@ -720,13 +850,18 @@ body {
     color: white;
     border: none;
     padding: 12px 24px;
-    border-radius: 15px;
+    border-radius: 20px;
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
     white-space: nowrap;
     min-width: 80px;
+    flex-shrink: 0;
+    align-self: flex-end;
+    height: 50px;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
 }
 
 .send-btn:hover:not(:disabled) {
@@ -751,7 +886,7 @@ body {
     transform: translate(-50%, -50%);
     background: rgba(255, 255, 255, 0.95);
     padding: 30px;
-    border-radius: 15px;
+    border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     display: none;
     flex-direction: column;
@@ -800,25 +935,105 @@ body {
 }
 
 /* ========== 响应式设计 ========== */
+@media (max-width: 1200px) {
+    .container {
+        max-width: 95%;
+        margin: 0 auto;
+    }
+    
+    .sidebar {
+        width: 260px;
+        min-width: 260px;
+        max-width: 260px;
+    }
+    
+    .chat-input-wrapper {
+        max-width: 90%;
+    }
+}
+
 @media (max-width: 900px) {
+    body {
+        padding: 10px;
+    }
+    
     .container {
         flex-direction: column;
+        height: 95vh;
+        min-height: 600px;
     }
     
     .sidebar {
         width: 100%;
+        min-width: 100%;
+        max-width: 100%;
         height: auto;
         flex-direction: row;
         overflow-x: auto;
+        padding: 15px;
     }
     
-    .chat-content {
-        flex-direction: column;
+    .main-content {
+        flex: 1;
+        min-height: 0;
+    }
+    
+    .chat-header {
+        padding: 15px 20px;
+        min-height: 60px;
+    }
+    
+    .chat-header h1 {
+        font-size: 20px;
+    }
+    
+    .chat-messages-container {
+        padding: 15px 20px;
+    }
+    
+    .chat-input-container {
+        padding: 15px 20px;
     }
     
     .chat-input-wrapper {
         flex-direction: column;
         gap: 8px;
+        max-width: 100%;
+    }
+    
+    .send-btn {
+        width: 100%;
+        height: 45px;
+    }
+}
+
+@media (max-width: 600px) {
+    .container {
+        border-radius: 20px;
+        margin: 5px;
+        width: calc(100% - 10px);
+        height: calc(100vh - 10px);
+    }
+    
+    .sidebar {
+        padding: 10px;
+    }
+    
+    .chat-header {
+        padding: 10px 15px;
+        min-height: 50px;
+    }
+    
+    .chat-header h1 {
+        font-size: 18px;
+    }
+    
+    .chat-messages-container {
+        padding: 10px 15px;
+    }
+    
+    .chat-input-container {
+        padding: 10px 15px;
     }
 }
 
@@ -837,7 +1052,7 @@ body {
 .graph-panel.drag-target {
     background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
     border: 2px dashed #7c3aed;
-    border-radius: 12px;
+    border-radius: 20px;
 }
 
 .graph-panel.drag-target::before {
@@ -849,7 +1064,7 @@ body {
     background: rgba(124, 58, 237, 0.9);
     color: white;
     padding: 12px 24px;
-    border-radius: 8px;
+    border-radius: 16px;
     font-size: 16px;
     font-weight: 500;
     z-index: 10;
@@ -883,4 +1098,225 @@ body {
         transform: translateX(100%);
         opacity: 0;
     }
+}
+
+/* ========== 滚动条样式优化 ========== */
+/* Webkit滚动条样式 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(124, 58, 237, 0.3);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(124, 58, 237, 0.5);
+}
+
+/* 侧边栏滚动条特殊样式 */
+.conversations-section::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.conversations-section::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.conversation-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.conversation-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* 聊天消息区域滚动条 */
+.chat-messages-container::-webkit-scrollbar-thumb {
+    background: rgba(124, 58, 237, 0.2);
+}
+
+.chat-messages-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(124, 58, 237, 0.4);
+}
+
+/* ========== 防抖动和稳定性优化 ========== */
+/* 确保容器不会因hover效果影响布局 */
+.sidebar, .main-content {
+    will-change: auto;
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    -o-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+/* 确保对话项变换不影响滚动 */
+.conversation-item {
+    will-change: transform, background-color;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* 平滑滚动 */
+.conversations-section, 
+.conversation-list, 
+.chat-messages-container {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 防止内容区域因滚动条出现而跳动 */
+.sidebar {
+    overflow-x: hidden;
+}
+
+/* 确保滚动条区域有足够空间，避免layout shift */
+.conversations-section {
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
+/* ========== 浏览器兼容性修复 ========== */
+/* 修复Webkit浏览器的渲染问题 */
+.container,
+.sidebar,
+.main-content,
+.chat-messages-container {
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    -o-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+/* 修复flex布局在旧浏览器中的问题 */
+.container {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+}
+
+.sidebar {
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -moz-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+}
+
+.main-content {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -moz-box-flex: 1;
+    -moz-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+}
+
+/* 修复渐变背景兼容性 */
+body {
+    background: -webkit-linear-gradient(135deg, rgba(181, 126, 218, 0.8) 0%, rgba(189, 169, 207, 0.8) 50%, rgba(217, 214, 220, 0.8) 100%);
+    background: -moz-linear-gradient(135deg, rgba(181, 126, 218, 0.8) 0%, rgba(189, 169, 207, 0.8) 50%, rgba(217, 214, 220, 0.8) 100%);
+    background: -ms-linear-gradient(135deg, rgba(181, 126, 218, 0.8) 0%, rgba(189, 169, 207, 0.8) 50%, rgba(217, 214, 220, 0.8) 100%);
+    background: -o-linear-gradient(135deg, rgba(181, 126, 218, 0.8) 0%, rgba(189, 169, 207, 0.8) 50%, rgba(217, 214, 220, 0.8) 100%);
+    background: linear-gradient(135deg, rgba(181, 126, 218, 0.8) 0%, rgba(189, 169, 207, 0.8) 50%, rgba(217, 214, 220, 0.8) 100%);
+}
+
+.sidebar {
+    background: -webkit-linear-gradient(180deg, #7C3AED 0%, #8B5CF6 50%, #A855F7 100%);
+    background: -moz-linear-gradient(180deg, #7C3AED 0%, #8B5CF6 50%, #A855F7 100%);
+    background: -ms-linear-gradient(180deg, #7C3AED 0%, #8B5CF6 50%, #A855F7 100%);
+    background: -o-linear-gradient(180deg, #7C3AED 0%, #8B5CF6 50%, #A855F7 100%);
+    background: linear-gradient(180deg, #7C3AED 0%, #8B5CF6 50%, #A855F7 100%);
+}
+
+/* 修复border-radius兼容性 */
+.container {
+    -webkit-border-radius: 28px;
+    -moz-border-radius: 28px;
+    border-radius: 28px;
+}
+
+.profile-section,
+.conversation-item,
+.new-chat-btn,
+.action-btn,
+.chat-input,
+.send-btn,
+.loading {
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+    border-radius: 20px;
+}
+
+.profile-status {
+    -webkit-border-radius: 16px;
+    -moz-border-radius: 16px;
+    border-radius: 16px;
+}
+
+/* 修复box-shadow兼容性 */
+.container {
+    -webkit-box-shadow: 0 25px 50px rgba(139, 92, 246, 0.25);
+    -moz-box-shadow: 0 25px 50px rgba(139, 92, 246, 0.25);
+    box-shadow: 0 25px 50px rgba(139, 92, 246, 0.25);
+}
+
+/* 修复backdrop-filter兼容性 */
+.container {
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
+}
+
+/* 强制硬件加速 */
+.conversation-item,
+.message,
+.chat-input,
+.send-btn {
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
+    -ms-transform: translate3d(0, 0, 0);
+    -o-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+}
+
+/* 防止文本选择问题 */
+.sidebar-header,
+.conversation-item,
+.send-btn {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* 修复图片显示问题 */
+.profile-avatar img,
+.message-avatar img {
+    -webkit-object-fit: cover;
+    -moz-object-fit: cover;
+    -ms-object-fit: cover;
+    -o-object-fit: cover;
+    object-fit: cover;
+}
+
+/* 确保所有元素正确继承box-sizing */
+*,
+*:before,
+*:after {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
 } 

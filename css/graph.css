@@ -97,7 +97,7 @@
     position: absolute;
     background: rgba(255, 255, 255, 0.98);
     border: 2px solid #7C3AED;
-    border-radius: 15px;
+    border-radius: 20px;
     padding: 15px;
     min-width: 280px;
     max-width: 350px;
@@ -130,7 +130,7 @@
 .floating-input textarea {
     width: 100%;
     border: 1px solid #D1D5DB;
-    border-radius: 10px;
+    border-radius: 16px;
     padding: 8px 12px;
     font-size: 14px;
     resize: none;
@@ -155,7 +155,7 @@
 
 .floating-btn {
     padding: 6px 12px;
-    border-radius: 8px;
+    border-radius: 16px;
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -202,5 +202,43 @@
     
     .graph-node text {
         font-size: 10px;
+    }
+}
+
+/* 拖拽目标区域样式 */
+.graph-section.drag-target {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border: 2px dashed #7C3AED;
+    transition: all 0.3s ease;
+}
+
+.graph-section.drag-target #graph-container {
+    opacity: 0.8;
+}
+
+/* 拖拽提示样式 */
+.drop-notification {
+    animation: slideInRight 0.3s ease-out !important;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
     }
 } 

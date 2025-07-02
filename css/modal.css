@@ -24,7 +24,7 @@
 
 .profile-modal-content {
     background: white;
-    border-radius: 20px;
+    border-radius: 28px;
     padding: 30px;
     width: 90%;
     max-width: 500px;
@@ -103,7 +103,7 @@
 .form-group input,
 .form-group textarea {
     border: 2px solid #e2e8f0;
-    border-radius: 10px;
+    border-radius: 16px;
     padding: 12px 16px;
     font-family: inherit;
     font-size: 14px;
@@ -131,7 +131,7 @@
 
 .modal-btn {
     padding: 12px 24px;
-    border-radius: 10px;
+    border-radius: 18px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -166,7 +166,7 @@
         width: 95%;
         padding: 20px;
         margin: 10px;
-        border-radius: 15px;
+        border-radius: 20px;
     }
     
     .profile-modal-avatar {

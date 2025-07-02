@@ -12,140 +12,218 @@ function generateExampleGraph(aiResponse) {
 
 // 智能概念层级提取
 function extractConceptsHierarchy(text) {
-    // 清理文本
-    const cleanText = text.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s]/g, ' ');
+    console.log('开始提取概念层级...', text.substring(0, 100));
     
-    // 提取不同层级的概念
-    const concepts = {
-        level1: [], // 核心概念
-        level2: [], // 技术方法
-        level3: [], // 应用领域
-        level4: []  // 具体实现
-    };
+    // 清理文本
+    const cleanText = text.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s]/g, ' ')
+                         .replace(/\s+/g, ' ')
+                         .trim();
+    
+    if (!cleanText || cleanText.length < 10) {
+        console.warn('文本太短，无法提取概念');
+        return generateDefaultGraph();
+    }
+    
+    // 智能概念提取
+    const concepts = extractKeyConceptsFromText(cleanText);
+    
+    // 生成有向图数据 - 按照JSON格式
+    return buildDirectedGraphData(concepts);
+}
 
-    // 分词并分类
-    const words = cleanText.split(/\s+/).filter(word => word.length > 1 && word.length < 12);
+// 从文本中提取关键概念
+function extractKeyConceptsFromText(text) {
+    const concepts = [];
+    
+    // 中文分词的简单实现
+    const chineseWords = text.match(/[\u4e00-\u9fa5]{2,8}/g) || [];
+    // 英文单词提取
+    const englishWords = text.match(/[a-zA-Z]{3,15}/gi) || [];
+    // 混合词汇（包含数字）
+    const mixedWords = text.match(/[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)*(?:[a-zA-Z0-9]+)?/gi) || [];
+    
+    // 合并所有词汇
+    const allWords = [...chineseWords, ...englishWords, ...mixedWords];
+    
+    // 统计词频
     const wordFreq = {};
-    words.forEach(word => {
-        wordFreq[word] = (wordFreq[word] || 0) + 1;
-    });
-
-    // 按频率排序的高频词
-    const sortedWords = Object.entries(wordFreq)
-        .filter(([word, freq]) => freq > 1 && word.length > 1)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 15)
-        .map(([word]) => word);
-
-    // 智能分层
-    sortedWords.forEach((word, index) => {
-        if (index < 3) {
-            concepts.level1.push({
-                id: word,
-                level: 1,
-                group: 1,
-                size: 25 + Math.random() * 10,
-                importance: 'high'
-            });
-        } else if (index < 7) {
-            concepts.level2.push({
-                id: word,
-                level: 2,
-                group: 2,
-                size: 18 + Math.random() * 8,
-                importance: 'medium'
-            });
-        } else if (index < 11) {
-            concepts.level3.push({
-                id: word,
-                level: 3,
-                group: 3,
-                size: 12 + Math.random() * 6,
-                importance: 'low'
-            });
-        } else {
-            concepts.level4.push({
-                id: word,
-                level: 4,
-                group: 4,
-                size: 8 + Math.random() * 4,
-                importance: 'minimal'
-            });
+    allWords.forEach(word => {
+        const normalizedWord = word.toLowerCase();
+        if (isValidConcept(normalizedWord)) {
+            wordFreq[word] = (wordFreq[word] || 0) + 1;
         }
     });
+    
+    // 技术术语权重加成
+    const techTerms = ['vue', 'react', 'javascript', 'python', 'css', 'html', 'node', 'api', 'http', 'json', 'xml', 'sql', 'database'];
+    Object.keys(wordFreq).forEach(word => {
+        if (techTerms.some(term => word.toLowerCase().includes(term))) {
+            wordFreq[word] *= 2;
+        }
+    });
+    
+    // 按频率和长度排序，优先选择有意义的概念
+    const sortedWords = Object.entries(wordFreq)
+        .filter(([word, freq]) => freq > 0)
+        .sort((a, b) => {
+            // 综合考虑频率和词汇长度
+            const scoreA = a[1] + (a[0].length > 2 ? 1 : 0) + (a[0].length > 4 ? 1 : 0);
+            const scoreB = b[1] + (b[0].length > 2 ? 1 : 0) + (b[0].length > 4 ? 1 : 0);
+            return scoreB - scoreA;
+        })
+        .slice(0, 15)
+        .map(([word]) => word);
+    
+    // 转换为节点格式
+    sortedWords.forEach((word, index) => {
+        concepts.push({
+            id: word,
+            group: (index % 8) + 1, // 1-8的组号
+            index: index,
+            size: Math.max(12, 28 - index * 1.2), // 根据重要性设置大小
+            level: index < 3 ? 1 : (index < 8 ? 2 : 3) // 层级
+        });
+    });
+    
+    return concepts;
+}
 
-    // 合并所有节点
-    const allNodes = [
-        ...concepts.level1,
-        ...concepts.level2,
-        ...concepts.level3,
-        ...concepts.level4
-    ];
-
-    // 生成智能连接
+// 构建有向图数据结构
+function buildDirectedGraphData(concepts) {
+    if (concepts.length === 0) {
+        return generateDefaultGraph();
+    }
+    
+    const nodes = concepts.map(concept => ({
+        id: concept.id,
+        group: concept.group || Math.floor(Math.random() * 8) + 1,
+        index: concept.index || 0,
+        size: concept.size || 15,
+        level: concept.level || 1
+    }));
+    
+    // 生成有向边 - 创建层级结构
     const links = [];
     
-    // 核心概念互相连接
-    for (let i = 0; i < concepts.level1.length; i++) {
-        for (let j = i + 1; j < concepts.level1.length; j++) {
+    // 核心节点之间的连接
+    const coreNodes = nodes.filter(n => n.level === 1);
+    if (coreNodes.length > 1) {
+        for (let i = 0; i < coreNodes.length - 1; i++) {
             links.push({
-                source: concepts.level1[i].id,
-                target: concepts.level1[j].id,
-                value: 8 + Math.random() * 4,
+                source: coreNodes[i].id,
+                target: coreNodes[i + 1].id,
+                value: 5,
                 type: 'core'
             });
         }
     }
-
-    // 核心概念连接到技术方法
-    concepts.level1.forEach(core => {
-        concepts.level2.slice(0, 2).forEach(tech => {
+    
+    // 从核心节点指向二级节点
+    const secondaryNodes = nodes.filter(n => n.level === 2);
+    coreNodes.forEach((core, coreIndex) => {
+        const targetSecondary = secondaryNodes.slice(coreIndex * 2, (coreIndex + 1) * 2);
+        targetSecondary.forEach(secondary => {
             links.push({
                 source: core.id,
-                target: tech.id,
-                value: 6 + Math.random() * 3,
+                target: secondary.id,
+                value: 3,
                 type: 'hierarchy'
             });
         });
     });
-
-    // 技术方法连接到应用
-    concepts.level2.forEach(tech => {
-        concepts.level3.slice(0, 1).forEach(app => {
-            if (Math.random() > 0.5) {
-                links.push({
-                    source: tech.id,
-                    target: app.id,
-                    value: 4 + Math.random() * 2,
-                    type: 'application'
-                });
-            }
-        });
-    });
-
-    // 添加一些随机连接增加复杂性
-    for (let i = 0; i < Math.min(3, allNodes.length); i++) {
-        const randomIndex1 = Math.floor(Math.random() * allNodes.length);
-        const randomIndex2 = Math.floor(Math.random() * allNodes.length);
-        if (randomIndex1 !== randomIndex2) {
+    
+    // 从二级节点指向三级节点
+    const tertiaryNodes = nodes.filter(n => n.level === 3);
+    secondaryNodes.forEach((secondary, index) => {
+        const targetTertiary = tertiaryNodes[index];
+        if (targetTertiary) {
             links.push({
-                source: allNodes[randomIndex1].id,
-                target: allNodes[randomIndex2].id,
-                value: 2 + Math.random() * 2,
-                type: 'related'
+                source: secondary.id,
+                target: targetTertiary.id,
+                value: 2,
+                type: 'application'
             });
         }
+    });
+    
+    // 添加一些交叉连接
+    if (nodes.length > 3) {
+        const crossConnections = Math.min(3, Math.floor(nodes.length / 3));
+        for (let i = 0; i < crossConnections; i++) {
+            const sourceIndex = Math.floor(Math.random() * nodes.length);
+            const targetIndex = Math.floor(Math.random() * nodes.length);
+            if (sourceIndex !== targetIndex) {
+                links.push({
+                    source: nodes[sourceIndex].id,
+                    target: nodes[targetIndex].id,
+                    value: 1,
+                    type: 'related'
+                });
+            }
+        }
     }
+    
+    console.log('生成图数据:', { nodes: nodes.length, links: links.length });
+    
+    return { nodes, links };
+}
 
+// 验证概念是否有效
+function isValidConcept(word) {
+    if (!word || typeof word !== 'string') return false;
+    if (word.length < 2 || word.length > 20) return false;
+    
+    // 过滤无意义的词汇 - 中英文停用词
+    const stopWords = [
+        // 中文停用词
+        '的', '了', '在', '是', '我', '有', '和', '就', '不', '人', '都', '一', '一个',
+        '上', '也', '很', '到', '说', '要', '去', '你', '会', '着', '没有', '看', '好',
+        '来', '对', '那', '这', '它', '但', '而', '或', '因为', '所以', '如果', '虽然',
+        '可以', '应该', '能够', '需要', '通过', '使用', '进行', '实现', '提供', '包含',
+        '主要', '重要', '基本', '简单', '复杂', '特别', '一般', '通常', '经常', '可能',
+        '比如', '例如', '包括', '特别是', '尤其是', '另外', '此外', '而且', '同时',
+        // 英文停用词
+        'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of',
+        'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had',
+        'this', 'that', 'these', 'those', 'can', 'could', 'will', 'would', 'should',
+        'do', 'does', 'did', 'get', 'got', 'make', 'made', 'take', 'took', 'come', 'came',
+        'go', 'went', 'see', 'saw', 'know', 'knew', 'think', 'thought', 'say', 'said',
+        'work', 'worked', 'way', 'ways', 'time', 'times', 'year', 'years', 'day', 'days',
+        'new', 'old', 'good', 'bad', 'big', 'small', 'long', 'short', 'high', 'low',
+        'first', 'last', 'next', 'some', 'any', 'all', 'each', 'every', 'other', 'another',
+        'much', 'many', 'more', 'most', 'less', 'few', 'several', 'both', 'either', 'neither'
+    ];
+    
+    // 检查是否为停用词（大小写不敏感）
+    if (stopWords.includes(word.toLowerCase())) return false;
+    
+    // 检查是否为纯数字或特殊字符
+    if (/^\d+$/.test(word)) return false;
+    if (/^[^\u4e00-\u9fa5a-zA-Z]+$/.test(word)) return false;
+    
+    // 过滤过于常见的编程词汇
+    const commonCodeWords = ['function', 'return', 'var', 'let', 'const', 'if', 'else', 'for', 'while', 'class', 'public', 'private', 'static'];
+    if (commonCodeWords.includes(word.toLowerCase())) return false;
+    
+    // 过滤单个字符的中文（除非是有意义的单字）
+    const meaningfulSingleChars = ['和', '或', '与', '及', '、'];
+    if (word.length === 1 && /[\u4e00-\u9fa5]/.test(word) && !meaningfulSingleChars.includes(word)) return false;
+    
+    return true;
+}
+
+// 生成默认图表
+function generateDefaultGraph() {
     return {
-        nodes: allNodes.length > 0 ? allNodes : [{
-            id: '主要概念',
-            level: 1,
-            group: 1,
-            size: 20,
-            importance: 'high'
-        }],
-        links: links
+        nodes: [
+            { id: "测试节点", group: 1, index: 0, size: 20, level: 1 },
+            { id: "子节点1", group: 2, index: 1, size: 15, level: 2 },
+            { id: "子节点2", group: 3, index: 2, size: 15, level: 2 }
+        ],
+        links: [
+            { source: "测试节点", target: "子节点1", value: 3, type: "core" },
+            { source: "测试节点", target: "子节点2", value: 2, type: "core" }
+        ]
     };
 }
 
@@ -188,126 +266,86 @@ function setInitialPositions(nodes, width, height) {
     });
 }
 
-// 主要的图表更新函数 - 修复节点文本错位问题
+// ========== 主图渲染与交互核心 ========== 
 function updateGraph(graphData) {
     window.lastGraphData = graphData;
     if (currentSimulation) {
         currentSimulation.stop();
     }
-    
     const container = document.getElementById('graph-container');
     if (!container) {
         console.error('Graph container not found');
         return;
     }
     
+    // 隐藏提示文字
+    const hint = document.getElementById('graph-hint');
+    if (hint) {
+        hint.style.opacity = '0';
+        setTimeout(() => {
+            hint.style.display = 'none';
+        }, 300);
+    }
     const rect = container.getBoundingClientRect();
     const width = rect.width || 500;
     const height = rect.height || 500;
-    
-    console.log('Container dimensions:', width, height); // 调试信息
-    
-    // 清除现有内容
     d3.select('#graph-container').html('');
-    
-    // 创建SVG
-    const svg = d3.select('#graph-container')
-        .append('svg')
+    const svg = d3.select('#graph-container').append('svg')
         .attr('width', width)
-        .attr('height', height)
-        .attr('viewBox', [0, 0, width, height])
-        .attr('id', 'dynamic-graph')
-        .style('background', '#fafbfc');
-    
-    // 添加渐变定义
-    const defs = svg.append("defs");
-    const gradients = [
-        { id: "grad1", colors: ["#7C3AED", "#A855F7"] },
-        { id: "grad2", colors: ["#3B82F6", "#60A5FA"] },
-        { id: "grad3", colors: ["#10B981", "#34D399"] },
-        { id: "grad4", colors: ["#F59E0B", "#FBBF24"] }
-    ];
-
-    gradients.forEach(grad => {
-        const gradient = defs.append("linearGradient")
-            .attr("id", grad.id)
-            .attr("x1", "0%").attr("y1", "0%")
-            .attr("x2", "100%").attr("y2", "100%");
-        
-        gradient.append("stop")
-            .attr("offset", "0%")
-            .attr("stop-color", grad.colors[0]);
-        
-        gradient.append("stop")
-            .attr("offset", "100%")
-            .attr("stop-color", grad.colors[1]);
-    });
-    
-    // 主绘图组
-    const g = svg.append('g');
-    
-    // 缩放功能
-    const zoom = d3.zoom()
-        .scaleExtent([0.1, 8])
-        .on('zoom', (event) => {
-            g.attr('transform', event.transform);
-        });
-    svg.call(zoom);
-    
-    // 预设节点初始位置
-    setInitialPositions(graphData.nodes, width, height);
-    
-    // 稳定的力导向布局 - 优化参数减少抖动
-    const simulation = d3.forceSimulation(graphData.nodes)
-        .force("link", d3.forceLink(graphData.links).id(d => d.id)
-            .distance(d => {
-                const sourceLevel = d.source.level || 1;
-                const targetLevel = d.target.level || 1;
-                return 80 + (sourceLevel + targetLevel) * 25;
-            })
-            .strength(0.4)
-        )
-        .force("charge", d3.forceManyBody()
-            .strength(d => {
-                const level = d.level || 1;
-                return level === 1 ? -600 : (level === 2 ? -300 : -150);
-            })
-            .distanceMax(250)
-        )
-        .force("center", d3.forceCenter(width / 2, height / 2).strength(0.03))
-        .force("collision", d3.forceCollide()
-            .radius(d => (d.size || 10) + 20)
-            .strength(0.7)
-            .iterations(2)
-        )
-        .force("radial", d3.forceRadial(d => {
-            const level = d.level || 1;
-            return level === 1 ? 0 : (level - 1) * 90;
-        }, width / 2, height / 2).strength(0.2))
-        .force("x", d3.forceX(width / 2).strength(0.01))
-        .force("y", d3.forceY(height / 2).strength(0.01))
-        .alpha(0.2)
-        .alphaDecay(0.015)
-        .velocityDecay(0.8);
-    
-    currentSimulation = simulation;
-    
-    // 增强的连接线
-    const link = g.append("g")
-        .attr("class", "links")
-        .selectAll("line")
-        .data(graphData.links)
-        .enter().append("line")
-        .attr("stroke", d => {
+        .attr('height', height);
+    // 箭头定义
+    svg.append('defs').selectAll('marker')
+        .data(['core', 'hierarchy', 'application', 'related'])
+        .join('marker')
+        .attr('id', d => `arrow-${d}`)
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 18)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .attr('fill', d => {
             const colorMap = {
                 'core': '#7C3AED',
-                'hierarchy': '#3B82F6', 
+                'hierarchy': '#3B82F6',
                 'application': '#10B981',
-                'related': '#6B7280'
+                'related': '#F59E0B'
+            };
+            return colorMap[d] || '#999';
+        });
+    // 主绘图组
+    const g = svg.append('g');
+    // 缩放
+    svg.call(d3.zoom().scaleExtent([0.1, 8]).on('zoom', (event) => {
+        g.attr('transform', event.transform);
+    }));
+    // 力导向布局
+    setInitialPositions(graphData.nodes, width, height);
+    const simulation = d3.forceSimulation(graphData.nodes)
+        .force('link', d3.forceLink(graphData.links).id(d => d.id).distance(120).strength(0.5))
+        .force('charge', d3.forceManyBody().strength(-400).distanceMax(400))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(d => (d.size || 10) + 18).strength(0.8))
+        .alpha(0.2).alphaDecay(0.02);
+    currentSimulation = simulation;
+    // 有向边
+    const link = g.append('g').attr('class', 'links')
+        .selectAll('line')
+        .data(graphData.links)
+        .join('line')
+        .attr('stroke', d => {
+            const colorMap = {
+                'core': '#7C3AED',
+                'hierarchy': '#3B82F6',
+                'application': '#10B981',
+                'related': '#F59E0B'
             };
             return colorMap[d.type] || '#999';
         })
-        .attr("stroke-opacity", d => {
+        .attr('stroke-width', d => Math.sqrt(d.value || 1) * 1.5)
+        .attr('stroke-opacity', d => {
             const opacityMap = {
                 'core': 0.8,
                 'hierarchy': 0.6,
@@ -316,294 +354,142 @@ function updateGraph(graphData) {
             };
             return opacityMap[d.type] || 0.4;
         })
-        .attr("stroke-width", d => Math.sqrt(d.value || 1) * 1.5)
-        .attr("stroke-dasharray", d => d.type === 'related' ? "5,5" : null);
-    
-    // 节点组 - 修复文本定位
-    const node = g.append("g")
-        .attr("class", "nodes")
-        .selectAll("g")
+        .attr('marker-end', d => `url(#arrow-${d.type})`);
+    // 节点组
+    const node = g.append('g').attr('class', 'nodes')
+        .selectAll('g')
         .data(graphData.nodes)
-        .enter().append("g")
-        .attr("class", d => `graph-node level-${d.level || 1}`)
-        .style("cursor", "pointer")
+        .join('g')
+        .attr('class', d => `graph-node level-${d.level || 1}`)
+        .style('cursor', 'pointer')
         .call(d3.drag()
-            .on("start", dragstarted)
-            .on("drag", dragged)
-            .on("end", dragended))
-        .on("click", handleNodeClick)
-        .on("mouseover", handleNodeHover)
-        .on("mouseout", handleNodeLeave);
-    
+            .on('start', function(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            })
+            .on('drag', function(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+                // 立即更新节点和边
+                d3.select(this).attr('transform', `translate(${d.fx},${d.fy})`);
+            })
+            .on('end', function(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            })
+        )
+        .on('click', handleNodeClick)
+        .on('mouseover', handleNodeHover)
+        .on('mouseout', handleNodeLeave);
     // 节点圆圈
-    const circles = node.append("circle")
-        .attr("r", 0)
-        .attr("fill", d => `url(#grad${d.group || 1})`)
-        .attr("stroke", d => {
-            const strokeColors = ["#7C3AED", "#3B82F6", "#10B981", "#F59E0B"];
-            return strokeColors[(d.group || 1) - 1] || "#6B7280";
+    const circles = node.append('circle')
+        .attr('r', 0)
+        .attr('fill', d => {
+            const colors = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#14B8A6', '#EC4899'];
+            return colors[(d.group - 1) % colors.length];
         })
-        .attr("stroke-width", d => {
+        .attr('stroke', d => {
+            const level = d.level || 1;
+            return level === 1 ? '#DC2626' : (level === 2 ? '#2563EB' : '#059669');
+        })
+        .attr('stroke-width', d => {
             const level = d.level || 1;
             return level === 1 ? 3 : (level === 2 ? 2 : 1.5);
         });
-    
-    // 节点文本 - 简化定位方法
-    const labels = node.append("text")
-        .attr("dx", d => (d.size || 10) + 8)
-        .attr("dy", ".35em")
-        .attr("text-anchor", "start")
-        .style("font-size", d => `${Math.max(10, (d.size || 10) * 0.5)}px`)
-        .style("font-weight", d => (d.level || 1) <= 2 ? "600" : "400")
-        .style("fill", "#1F2937")
-        .style("text-shadow", "1px 1px 2px rgba(255,255,255,0.8)")
-        .style("pointer-events", "none")
-        .style("user-select", "none")
-        .style("opacity", 0)
+    // 节点文本
+    const labels = node.append('text')
+        .attr('dx', d => (d.size || 10) + 8)
+        .attr('dy', '.35em')
+        .attr('text-anchor', 'start')
+        .style('font-size', d => `${Math.max(10, (d.size || 10) * 0.5)}px`)
+        .style('font-weight', d => (d.level || 1) <= 2 ? '600' : '400')
+        .style('fill', '#1F2937')
+        .style('text-shadow', '1px 1px 2px rgba(255,255,255,0.8)')
+        .style('pointer-events', 'none')
+        .style('user-select', 'none')
+        .style('opacity', 0)
         .text(d => d.id);
-    
-    // 重要性指示器
-    node.filter(d => (d.level || 1) === 1)
-        .append("circle")
-        .attr("r", 4)
-        .attr("cx", d => -(d.size || 10) + 6)
-        .attr("cy", d => -(d.size || 10) + 6)
-        .attr("fill", "#EF4444")
-        .attr("stroke", "white")
-        .attr("stroke-width", 1);
-    
-    // 动画效果
-    circles.transition()
-        .duration(800)
-        .attr("r", d => d.size || 10)
-        .ease(d3.easeElastic);
-    
-    labels.transition()
-        .delay(400)
-        .duration(600)
-        .style("opacity", 1);
-    
-    // 力导向模拟更新 - 确保节点和文本同步移动
-    simulation.on("tick", () => {
-        // 边界约束，防止节点移出画布
+    // 动画
+    circles.transition().duration(800).attr('r', d => d.size || 10).ease(d3.easeElastic);
+    labels.transition().delay(400).duration(600).style('opacity', 1);
+    // 力导向 tick
+    simulation.on('tick', () => {
+        // 边界约束
         graphData.nodes.forEach(d => {
             const margin = 60;
             d.x = Math.max(margin, Math.min(width - margin, d.x));
             d.y = Math.max(margin, Math.min(height - margin, d.y));
         });
-
-        link.attr("x1", d => d.source.x)
-            .attr("y1", d => d.source.y)
-            .attr("x2", d => d.target.x)
-            .attr("y2", d => d.target.y);
-        
-        // 关键修复：使用transform确保组内所有元素同步移动
-        node.attr("transform", d => `translate(${d.x},${d.y})`);
+        link.attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+        node.attr('transform', d => `translate(${d.x},${d.y})`);
     });
-    
-    // 模拟结束时添加稳定类
-    simulation.on("end", () => {
-        svg.classed("graph-stable", true);
-    });
-    
-    // 设置模拟自动停止
+    // 停止自动模拟
     setTimeout(() => {
-        if (simulation.alpha() > 0.01) {
-            simulation.stop();
-            svg.classed("graph-stable", true);
-        }
+        if (simulation.alpha() > 0.01) simulation.stop();
     }, 3000);
-    
-    // 精确拖动控制 - 无延迟响应
-    function dragstarted(event, d) {
-        // 暂停模拟，实现即时拖动
-        simulation.stop();
-        d.fx = d.x;
-        d.fy = d.y;
-        
-        d3.select(this)
-            .classed("dragging", true)
-            .select("circle")
-            .attr("r", (d.size || 10) * 1.1)
-            .attr("stroke-width", 3)
-            .style("filter", "drop-shadow(4px 4px 8px rgba(124, 58, 237, 0.4))");
-        
-        // 轻微淡化其他元素
-        node.filter(n => n !== d).style("opacity", 0.7);
-        link.filter(l => l.source !== d && l.target !== d).style("opacity", 0.4);
-    }
-    
-    function dragged(event, d) {
-        // 直接更新位置，无延迟
-        d.fx = event.x;
-        d.fy = event.y;
-        
-        // 限制在画布边界内
-        const margin = 60;
-        d.fx = Math.max(margin, Math.min(width - margin, d.fx));
-        d.fy = Math.max(margin, Math.min(height - margin, d.fy));
-        
-        // 立即更新节点位置
-        d.x = d.fx;
-        d.y = d.fy;
-        
-        // 立即更新连接线
-        link.filter(l => l.source === d || l.target === d)
-            .attr("x1", l => l.source.x)
-            .attr("y1", l => l.source.y)
-            .attr("x2", l => l.target.x)
-            .attr("y2", l => l.target.y);
-        
-        // 立即更新节点组位置
-        d3.select(this).attr("transform", `translate(${d.x},${d.y})`);
-    }
-    
-    function dragended(event, d) {
-        const level = d.level || 1;
-        d3.select(this)
-            .classed("dragging", false)
-            .select("circle")
-            .transition()
-            .duration(200)
-            .ease(d3.easeCubicOut)
-            .attr("r", d.size || 10)
-            .attr("stroke-width", level === 1 ? 3 : (level === 2 ? 2 : 1.5))
-            .style("filter", null);
-        
-        // 快速恢复所有元素
-        node.transition()
-            .duration(200)
-            .ease(d3.easeCubicOut)
-            .style("opacity", 1);
-        
-        link.transition()
-            .duration(200)
-            .ease(d3.easeCubicOut)
-            .style("opacity", d => {
-                const opacityMap = {
-                    'core': 0.8,
-                    'hierarchy': 0.6,
-                    'application': 0.4,
-                    'related': 0.3
-                };
-                return opacityMap[d.type] || 0.4;
-            });
-        
-        // 短暂延迟后释放固定位置并重新启动模拟
-        setTimeout(() => {
-            d.fx = null;
-            d.fy = null;
-            simulation.alpha(0.1).restart();
-        }, 300);
-    }
-    
-    // 节点点击处理
-    function handleNodeClick(event, d) {
-        event.stopPropagation();
-        showFloatingInput(event, d);
-    }
-    
-    // 节点悬停效果 - 修复位置移动问题
-    function handleNodeHover(event, d) {
-        if (d3.select(this).classed("dragging")) return;
-        
-        // 设置悬停状态，暂停模拟防止位置跳动
-        isNodeHovered = true;
-        if (simulation && simulation.alpha() > 0.01) {
-            simulation.stop();
-        }
-        
-        // 只改变圆圈大小，不使用transform，避免位置跳动
-        d3.select(this).select("circle")
-            .transition()
-            .duration(200)
-            .ease(d3.easeCubicOut)
-            .attr("r", (d.size || 10) * 1.12)
-            .attr("stroke-width", ((d.level || 1) === 1 ? 3 : (d.level === 2 ? 2 : 1.5)) + 1)
-            .style("filter", "drop-shadow(2px 2px 4px rgba(124, 58, 237, 0.3))");
-        
-        // 文本高亮但不改变大小
-        d3.select(this).select("text")
-            .transition()
-            .duration(200)
-            .ease(d3.easeCubicOut)
-            .style("font-weight", "700")
-            .style("fill", "#7C3AED");
-        
-        // 连接线和其他节点的淡化效果
-        link.transition()
-            .duration(200)
-            .ease(d3.easeCubicOut)
-            .style("opacity", l => (l.source === d || l.target === d) ? 0.9 : 0.2)
-            .style("stroke-width", l => (l.source === d || l.target === d) ? 
-                Math.sqrt(l.value || 1) * 2 : Math.sqrt(l.value || 1) * 1.5);
-        
-        // 其他节点淡化
-        node.filter(n => n !== d)
-            .transition()
-            .duration(200)
-            .ease(d3.easeCubicOut)
-            .style("opacity", 0.4);
-    }
-    
-    function handleNodeLeave(event, d) {
-        if (d3.select(this).classed("dragging")) return;
-        
-        // 清除悬停状态
-        isNodeHovered = false;
-        
-        // 恢复节点原始大小和样式
-        d3.select(this).select("circle")
-            .transition()
-            .duration(250)
-            .ease(d3.easeCubicOut)
-            .attr("r", d.size || 10)
-            .attr("stroke-width", (d.level || 1) === 1 ? 3 : (d.level === 2 ? 2 : 1.5))
-            .style("filter", null);
-        
-        // 恢复文本样式
-        d3.select(this).select("text")
-            .transition()
-            .duration(250)
-            .ease(d3.easeCubicOut)
-            .style("font-weight", (d.level || 1) <= 2 ? "600" : "400")
-            .style("fill", "#1F2937");
-        
-        // 恢复所有连接线
-        link.transition()
-            .duration(250)
-            .ease(d3.easeCubicOut)
-            .style("opacity", d => {
-                const opacityMap = {
-                    'core': 0.8,
-                    'hierarchy': 0.6,
-                    'application': 0.4,
-                    'related': 0.3
-                };
-                return opacityMap[d.type] || 0.4;
-            })
-            .style("stroke-width", d => Math.sqrt(d.value || 1) * 1.5);
-        
-        // 恢复所有节点
-        node.transition()
-            .duration(250)
-            .ease(d3.easeCubicOut)
-            .style("opacity", 1);
-    }
 }
 
 // ========== 浮动输入框功能 ==========
 function showFloatingInput(event, nodeData) {
     hideFloatingInput();
     
-    const containerRect = document.getElementById('graph-container').getBoundingClientRect();
-    const x = event.clientX - containerRect.left;
-    const y = event.clientY - containerRect.top;
+    const container = document.getElementById('graph-container');
+    const containerRect = container.getBoundingClientRect();
+    
+    // 计算节点在屏幕上的实际位置（考虑缩放和平移）
+    const svg = container.querySelector('svg');
+    let transform = { k: 1, x: 0, y: 0 };
+    
+    if (svg) {
+        const g = svg.querySelector('g');
+        if (g) {
+            const transformAttr = g.getAttribute('transform');
+            if (transformAttr) {
+                // 解析transform属性
+                const translateMatch = transformAttr.match(/translate\(([^,]+),([^)]+)\)/);
+                const scaleMatch = transformAttr.match(/scale\(([^)]+)\)/);
+                
+                if (translateMatch) {
+                    transform.x = parseFloat(translateMatch[1]);
+                    transform.y = parseFloat(translateMatch[2]);
+                }
+                if (scaleMatch) {
+                    transform.k = parseFloat(scaleMatch[1]);
+                }
+            }
+        }
+    }
+    
+    // 根据节点数据计算位置
+    const nodeX = (nodeData.x || 0) * transform.k + transform.x;
+    const nodeY = (nodeData.y || 0) * transform.k + transform.y;
     
     const floatingDiv = document.createElement('div');
     floatingDiv.className = 'floating-input';
-    floatingDiv.style.left = `${Math.min(x + 10, containerRect.width - 350)}px`;
-    floatingDiv.style.top = `${Math.max(y - 50, 10)}px`;
+    
+    // 确保浮动框在容器内
+    const inputWidth = 350;
+    const inputHeight = 120;
+    let left = Math.min(nodeX + 20, containerRect.width - inputWidth - 10);
+    let top = Math.max(nodeY - 60, 10);
+    
+    // 如果位置太靠右，显示在节点左侧
+    if (left < 10) {
+        left = Math.max(nodeX - inputWidth - 20, 10);
+    }
+    
+    // 如果位置太靠下，显示在节点上方
+    if (top + inputHeight > containerRect.height - 10) {
+        top = Math.max(nodeY - inputHeight - 20, 10);
+    }
+    
+    floatingDiv.style.left = `${left}px`;
+    floatingDiv.style.top = `${top}px`;
     
     floatingDiv.innerHTML = `
         <div class="floating-input-header">关于 "${nodeData.id}" 的提问</div>
@@ -674,21 +560,38 @@ function handleOutsideClick(event) {
 
 // ========== 拖拽内容生成图表 ==========
 function generateGraphFromContent(content) {
-    if (!content || !content.trim()) return;
-    
-    console.log('根据拖拽内容生成动态图表:', content.substring(0, 100) + '...');
-    
-    // 使用相同的提取算法
-    const concepts = extractConceptsHierarchy(content);
-    if (concepts.nodes.length === 0) {
-        console.warn('无法从内容中提取概念');
+    if (!content || !content.trim()) {
+        console.warn('内容为空，无法生成图表');
         return;
     }
     
-    console.log(`提取到 ${concepts.nodes.length} 个概念节点`);
+    console.log('根据拖拽内容生成动态图表:', content.substring(0, 100) + '...');
     
-    // 更新图表
-    updateGraph(concepts);
+    try {
+        // 使用概念提取算法
+        const graphData = extractConceptsHierarchy(content);
+        
+        if (!graphData || !graphData.nodes || graphData.nodes.length === 0) {
+            console.warn('无法从内容中提取概念，使用默认图表');
+            const defaultData = generateDefaultGraph();
+            updateGraph(defaultData);
+            return;
+        }
+        
+        console.log(`提取到 ${graphData.nodes.length} 个概念节点, ${graphData.links.length} 个连接`);
+        
+        // 更新图表
+        updateGraph(graphData);
+        
+        // 显示生成成功提示
+        console.log('动态图表生成成功');
+        
+    } catch (error) {
+        console.error('生成图表时出错:', error);
+        // 使用默认图表作为备选
+        const defaultData = generateDefaultGraph();
+        updateGraph(defaultData);
+    }
 }
 
 // 导出函数供外部使用
@@ -731,4 +634,87 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         updateGraph(testData);
     }, 500);
-}); 
+});
+
+// ========== 节点交互处理 ==========
+function handleNodeClick(event, nodeData) {
+    console.log('节点点击:', nodeData.id);
+    
+    // 阻止事件冒泡
+    event.stopPropagation();
+    
+    // 显示浮动输入框
+    showFloatingInput(event, nodeData);
+}
+
+function handleNodeHover(event, nodeData) {
+    isNodeHovered = true;
+    
+    // 高亮当前节点
+    const currentNode = d3.select(event.currentTarget);
+    currentNode.select('circle')
+        .transition()
+        .duration(200)
+        .attr('r', (d) => (d.size || 10) * 1.3)
+        .attr('stroke-width', 4);
+    
+    // 淡化其他节点
+    d3.selectAll('.graph-node')
+        .filter(d => d.id !== nodeData.id)
+        .transition()
+        .duration(200)
+        .style('opacity', 0.3);
+    
+    // 高亮相关连线
+    d3.selectAll('.links line')
+        .transition()
+        .duration(200)
+        .style('opacity', d => {
+            if (d.source.id === nodeData.id || d.target.id === nodeData.id) {
+                return 0.8;
+            }
+            return 0.1;
+        });
+    
+    console.log('节点悬停:', nodeData.id);
+}
+
+function handleNodeLeave(event, nodeData) {
+    isNodeHovered = false;
+    
+    // 恢复所有节点状态
+    d3.selectAll('.graph-node')
+        .transition()
+        .duration(300)
+        .style('opacity', 1);
+    
+    // 恢复当前节点大小
+    const currentNode = d3.select(event.currentTarget);
+    currentNode.select('circle')
+        .transition()
+        .duration(300)
+        .attr('r', nodeData.size || 10)
+        .attr('stroke-width', d => {
+            const level = d.level || 1;
+            return level === 1 ? 3 : (level === 2 ? 2 : 1.5);
+        });
+    
+    // 恢复所有连线
+    d3.selectAll('.links line')
+        .transition()
+        .duration(300)
+        .style('opacity', d => {
+            const opacityMap = {
+                'core': 0.8,
+                'hierarchy': 0.6,
+                'application': 0.4,
+                'related': 0.3
+            };
+            return opacityMap[d.type] || 0.4;
+        });
+    
+    console.log('节点离开:', nodeData.id);
+}
+
+// 导出函数供外部使用
+window.generateGraphFromContent = generateGraphFromContent; 
