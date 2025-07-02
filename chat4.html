@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态关系图生成器 - VisuWords风格</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            background: linear-gradient(to right, #ff8a00, #da1b60);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .app-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(0, 15, 30, 0.85);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .visualization-section {
+            flex: 2;
+            min-width: 600px;
+            background: rgba(0, 10, 20, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #4fc3f7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title svg {
+            width: 24px;
+            height: 24px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 30, 60, 0.7);
+            border: 1px solid rgba(100, 180, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            color: #e0f7fa;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 20px;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #4fc3f7;
+            box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.3);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #2196F3, #21CBF3);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.secondary {
+            background: linear-gradient(45deg, #673AB7, #9C27B0);
+        }
+        
+        button.export {
+            background: linear-gradient(45deg, #43A047, #76FF03);
+        }
+        
+        #graph-container {
+            flex: 1;
+            background: rgba(0, 20, 40, 0.7);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(100, 180, 255, 0.2);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 15px;
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 30, 60, 0.5);
+            border-radius: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .node-example {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 5px;
+        }
+        
+        .tooltip {
+            position: absolute;
+            padding: 12px;
+            background: rgba(0, 20, 40, 0.95);
+            border: 1px solid rgba(100, 180, 255, 0.5);
+            border-radius: 8px;
+            pointer-events: none;
+            font-size: 14px;
+            max-width: 300px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip h3 {
+            color: #4fc3f7;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .tooltip p {
+            margin: 5px 0;
+            color: #e0f7fa;
+        }
+        
+        .examples {
+            margin-top: 25px;
+        }
+        
+        .examples h3 {
+            margin-bottom: 12px;
+            color: #81D4FA;
+        }
+        
+        .example-item {
+            background: rgba(0, 40, 80, 0.6);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .example-item:hover {
+            background: rgba(0, 60, 120, 0.7);
+        }
+        
+        .example-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #4fc3f7;
+        }
+        
+        .example-desc {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        @media (max-width: 1000px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .visualization-section {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>动态关系图生成器</h1>
+            <p class="subtitle">上传或输入JSON数据，自动生成交互式节点关系图。支持拖动、缩放、悬停查看详情，并可将可视化结果导出为SVG文件。</p>
+        </header>
+        
+        <div class="app-container">
+            <div class="input-section">
+                <h2 class="section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                        <polyline points="13 2 13 9 20 9"></polyline>
+                    </svg>
+                    数据输入
+                </h2>
+                <textarea id="json-input" placeholder="在此处输入或粘贴JSON数据...">{
+  "nodes": [
+    {"id": "人工智能", "group": 1, "size": 28},
+    {"id": "机器学习", "group": 2, "size": 24},
+    {"id": "深度学习", "group": 2, "size": 22},
+    {"id": "神经网络", "group": 3, "size": 20},
+    {"id": "计算机视觉", "group": 4, "size": 18},
+    {"id": "自然语言处理", "group": 4, "size": 18},
+    {"id": "数据挖掘", "group": 5, "size": 16},
+    {"id": "算法", "group": 6, "size": 16},
+    {"id": "大数据", "group": 5, "size": 16},
+    {"id": "云计算", "group": 7, "size": 16}
+  ],
+  "links": [
+    {"source": "人工智能", "target": "机器学习", "value": 10},
+    {"source": "人工智能", "target": "深度学习", "value": 8},
+    {"source": "人工智能", "target": "自然语言处理", "value": 8},
+    {"source": "人工智能", "target": "计算机视觉", "value": 8},
+    {"source": "机器学习", "target": "深度学习", "value": 9},
+    {"source": "深度学习", "target": "神经网络", "value": 10},
+    {"source": "机器学习", "target": "数据挖掘", "value": 7},
+    {"source": "数据挖掘", "target": "大数据", "value": 8},
+    {"source": "大数据", "target": "云计算", "value": 7},
+    {"source": "机器学习", "target": "算法", "value": 8},
+    {"source": "深度学习", "target": "计算机视觉", "value": 9},
+    {"source": "深度学习", "target": "自然语言处理", "value": 9}
+  ]
+}</textarea>
+                
+                <div class="button-group">
+                    <button id="generate-btn">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        生成图表
+                    </button>
+                    <button id="sample1-btn" class="secondary">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                        加载示例
+                    </button>
+                </div>
+                
+                <div class="examples">
+                    <h3>示例数据集</h3>
+                    <div class="example-item" data-example="1">
+                        <div class="example-title">科技领域关系</div>
+                        <div class="example-desc">展示人工智能相关技术的关系</div>
+                    </div>
+                    <div class="example-item" data-example="2">
+                        <div class="example-title">社交媒体网络</div>
+                        <div class="example-desc">用户之间的关注和互动关系</div>
+                    </div>
+                    <div class="example-item" data-example="3">
+                        <div class="example-title">生态系统食物链</div>
+                        <div class="example-desc">生物之间的捕食与被捕食关系</div>
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #FF5252;"></div>
+                        <span>核心概念</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #FFD740;"></div>
+                        <span>技术方法</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #7C4DFF;"></div>
+                        <span>基础理论</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #18FFFF;"></div>
+                        <span>应用领域</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #69F0AE;"></div>
+                        <span>支持技术</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="visualization-section">
+                <h2 class="section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    关系图可视化
+                </h2>
+                <div id="graph-container"></div>
+                <div class="controls">
+                    <div class="control-group">
+                        <button id="zoom-in-btn">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                <line x1="11" y1="8" x2="11" y2="14"></line>
+                                <line x1="8" y1="11" x2="14" y2="11"></line>
+                            </svg>
+                            放大
+                        </button>
+                        <button id="zoom-out-btn">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                <line x1="8" y1="11" x2="14" y2="11"></line>
+                            </svg>
+                            缩小
+                        </button>
+                        <button id="reset-btn" class="secondary">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <polyline points="23 20 23 14 17 14"></polyline>
+                                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                            </svg>
+                            重置视图
+                        </button>
+                    </div>
+                    <button id="export-btn" class="export">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        导出为SVG
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 动态关系图生成器 | 基于D3.js构建 | 类似VisuWords的交互式可视化工具</p>
+        </footer>
+    </div>
+    
+    <div class="tooltip"></div>
+    
+    <script>
+        // 初始示例数据
+        const sampleData = {
+            "nodes": [
+                {"id": "人工智能", "group": 1, "size": 28},
+                {"id": "机器学习", "group": 2, "size": 24},
+                {"id": "深度学习", "group": 2, "size": 22},
+                {"id": "神经网络", "group": 3, "size": 20},
+                {"id": "计算机视觉", "group": 4, "size": 18},
+                {"id": "自然语言处理", "group": 4, "size": 18},
+                {"id": "数据挖掘", "group": 5, "size": 16},
+                {"id": "算法", "group": 6, "size": 16},
+                {"id": "大数据", "group": 5, "size": 16},
+                {"id": "云计算", "group": 7, "size": 16}
+            ],
+            "links": [
+                {"source": "人工智能", "target": "机器学习", "value": 10},
+                {"source": "人工智能", "target": "深度学习", "value": 8},
+                {"source": "人工智能", "target": "自然语言处理", "value": 8},
+                {"source": "人工智能", "target": "计算机视觉", "value": 8},
+                {"source": "机器学习", "target": "深度学习", "value": 9},
+                {"source": "深度学习", "target": "神经网络", "value": 10},
+                {"source": "机器学习", "target": "数据挖掘", "value": 7},
+                {"source": "数据挖掘", "target": "大数据", "value": 8},
+                {"source": "大数据", "target": "云计算", "value": 7},
+                {"source": "机器学习", "target": "算法", "value": 8},
+                {"source": "深度学习", "target": "计算机视觉", "value": 9},
+                {"source": "深度学习", "target": "自然语言处理", "value": 9}
+            ]
+        };
+        
+        // 其他示例数据集
+        const examples = {
+            1: sampleData,
+            2: {
+                "nodes": [
+                    {"id": "用户A", "group": 1, "size": 22},
+                    {"id": "用户B", "group": 1, "size": 20},
+                    {"id": "用户C", "group": 1, "size": 18},
+                    {"id": "用户D", "group": 2, "size": 16},
+                    {"id": "用户E", "group": 2, "size": 16},
+                    {"id": "页面X", "group": 3, "size": 24},
+                    {"id": "页面Y", "group": 3, "size": 22},
+                    {"id": "页面Z", "group": 3, "size": 20}
+                ],
+                "links": [
+                    {"source": "用户A", "target": "用户B", "value": 8},
+                    {"source": "用户A", "target": "用户C", "value": 6},
+                    {"source": "用户B", "target": "用户C", "value": 7},
+                    {"source": "用户C", "target": "用户D", "value": 5},
+                    {"source": "用户D", "target": "用户E", "value": 6},
+                    {"source": "用户A", "target": "页面X", "value": 9},
+                    {"source": "用户B", "target": "页面X", "value": 8},
+                    {"source": "用户C", "target": "页面Y", "value": 7},
+                    {"source": "用户D", "target": "页面Z", "value": 8},
+                    {"source": "用户E", "target": "页面Z", "value": 7}
+                ]
+            },
+            3: {
+                "nodes": [
+                    {"id": "植物", "group": 1, "size": 25},
+                    {"id": "昆虫", "group": 2, "size": 20},
+                    {"id": "小鱼", "group": 3, "size": 18},
+                    {"id": "青蛙", "group": 4, "size": 20},
+                    {"id": "蛇", "group": 5, "size": 22},
+                    {"id": "鹰", "group": 6, "size": 24},
+                    {"id": "兔子", "group": 7, "size": 18},
+                    {"id": "狐狸", "group": 8, "size": 20}
+                ],
+                "links": [
+                    {"source": "植物", "target": "昆虫", "value": 9},
+                    {"source": "植物", "target": "兔子", "value": 8},
+                    {"source": "昆虫", "target": "小鱼", "value": 7},
+                    {"source": "昆虫", "target": "青蛙", "value": 8},
+                    {"source": "小鱼", "target": "青蛙", "value": 6},
+                    {"source": "青蛙", "target": "蛇", "value": 7},
+                    {"source": "蛇", "target": "鹰", "value": 6},
+                    {"source": "兔子", "target": "狐狸", "value": 7},
+                    {"source": "狐狸", "target": "鹰", "value": 6}
+                ]
+            }
+        };
+        
+        // 颜色映射
+        const colorScale = d3.scaleOrdinal()
+            .domain([1, 2, 3, 4, 5, 6, 7, 8])
+            .range(["#FF5252", "#FFD740", "#7C4DFF", "#18FFFF", "#69F0AE", "#FF6E40", "#E040FB", "#64FFDA"]);
+        
+        // 初始化变量
+        let svg, simulation, zoom;
+        let width, height;
+        
+        // 初始化可视化
+        function initVisualization() {
+            const container = document.getElementById('graph-container');
+            width = container.clientWidth;
+            height = container.clientHeight;
+            
+            // 清空容器
+            d3.select('#graph-container').html('');
+            
+            // 创建SVG元素
+            svg = d3.select('#graph-container')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .attr('viewBox', [0, 0, width, height])
+                .attr('class', 'graph-svg');
+            
+            // 添加可缩放的容器
+            const g = svg.append('g');
+            
+            // 初始化缩放行为
+            zoom = d3.zoom()
+                .scaleExtent([0.1, 8])
+                .on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                });
+            
+            svg.call(zoom);
+            
+            return g;
+        }
+        
+        // 生成关系图
+        function generateGraph(data) {
+            const g = initVisualization();
+            
+            // 创建力导向图模拟
+            simulation = d3.forceSimulation(data.nodes)
+                .force('link', d3.forceLink(data.links).id(d => d.id).distance(100))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(d => d.size + 10));
+            
+            // 创建连线
+            const link = g.append('g')
+                .attr('class', 'links')
+                .selectAll('line')
+                .data(data.links)
+                .enter()
+                .append('line')
+                .attr('stroke', '#aaa')
+                .attr('stroke-width', d => Math.sqrt(d.value) || 1)
+                .attr('stroke-opacity', 0.6);
+            
+            // 创建节点
+            const node = g.append('g')
+                .attr('class', 'nodes')
+                .selectAll('circle')
+                .data(data.nodes)
+                .enter()
+                .append('circle')
+                .attr('r', d => d.size || 10)
+                .attr('fill', d => colorScale(d.group))
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 1.5)
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended)
+                );
+            
+            // 添加节点标签
+            const text = g.append('g')
+                .attr('class', 'labels')
+                .selectAll('text')
+                .data(data.nodes)
+                .enter()
+                .append('text')
+                .attr('text-anchor', 'middle')
+                .attr('dy', d => (d.size || 10) + 15)
+                .text(d => d.id)
+                .attr('fill', '#fff')
+                .attr('font-size', d => Math.min(16, Math.max(10, (d.size || 10) / 2)))
+                .attr('pointer-events', 'none');
+            
+            // 添加鼠标悬停提示
+            const tooltip = d3.select('.tooltip');
+            
+            node.on('mouseover', (event, d) => {
+                // 高亮当前节点和关联节点
+                node.attr('opacity', 0.2);
+                link.attr('opacity', 0.1);
+                
+                d3.select(event.currentTarget).attr('opacity', 1);
+                link.filter(l => l.source === d || l.target === d)
+                    .attr('opacity', 0.8)
+                    .attr('stroke', '#FFD700')
+                    .attr('stroke-width', 2);
+                
+                // 显示工具提示
+                const links = data.links.filter(l => l.source === d || l.target === d);
+                const connections = links.map(l => {
+                    const other = l.source === d ? l.target : l.source;
+                    return `${other.id} (强度: ${l.value})`;
+                }).join('<br>');
+                
+                tooltip
+                    .html(`<h3>${d.id}</h3>
+                           <p>类型: 组${d.group}</p>
+                           <p>连接数: ${links.length}</p>
+                           <p>连接节点:<br>${connections}</p>`)
+                    .style('left', (event.pageX + 10) + 'px')
+                    .style('top', (event.pageY - 10) + 'px')
+                    .style('opacity', 0.95);
+            });
+            
+            node.on('mouseout', () => {
+                // 恢复原始状态
+                node.attr('opacity', 1);
+                link.attr('opacity', 0.6)
+                    .attr('stroke', '#aaa')
+                    .attr('stroke-width', d => Math.sqrt(d.value) || 1);
+                
+                // 隐藏工具提示
+                tooltip.style('opacity', 0);
+            });
+            
+            // 更新力导向图位置
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+                
+                node
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+                
+                text
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
+            });
+        }
+        
+        // 拖拽事件处理函数
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+        
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+        
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+        
+        // 导出为SVG文件
+        function exportSVG() {
+            const svgData = new XMLSerializer().serializeToString(svg.node());
+            const blob = new Blob([svgData], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = '关系图可视化.svg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // 事件监听器
+        document.getElementById('generate-btn').addEventListener('click', () => {
+            try {
+                const input = document.getElementById('json-input').value;
+                const data = JSON.parse(input);
+                generateGraph(data);
+            } catch (e) {
+                alert('JSON解析错误: ' + e.message);
+            }
+        });
+        
+        document.getElementById('sample1-btn').addEventListener('click', () => {
+            document.getElementById('json-input').value = JSON.stringify(sampleData, null, 2);
+            generateGraph(sampleData);
+        });
+        
+        document.querySelectorAll('.example-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const exampleId = item.getAttribute('data-example');
+                const exampleData = examples[exampleId];
+                document.getElementById('json-input').value = JSON.stringify(exampleData, null, 2);
+                generateGraph(exampleData);
+            });
+        });
+        
+        document.getElementById('export-btn').addEventListener('click', exportSVG);
+        
+        document.getElementById('zoom-in-btn').addEventListener('click', () => {
+            svg.transition().call(zoom.scaleBy, 1.5);
+        });
+        
+        document.getElementById('zoom-out-btn').addEventListener('click', () => {
+            svg.transition().call(zoom.scaleBy, 0.75);
+        });
+        
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            svg.transition()
+                .duration(750)
+                .call(zoom.transform, d3.zoomIdentity);
+        });
+        
+        // 页面加载时初始化示例
+        window.addEventListener('load', () => {
+            generateGraph(sampleData);
+        });
+        
+        // 响应窗口大小变化
+        window.addEventListener('resize', () => {
+            const input = document.getElementById('json-input').value;
+            if (input) {
+                try {
+                    const data = JSON.parse(input);
+                    generateGraph(data);
+                } catch (e) {
+                    // 忽略错误
+                }
+            }
+        });
+    </script>
+</body>
+</html>
