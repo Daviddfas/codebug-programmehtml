@@ -9,8 +9,8 @@ let userProfile = JSON.parse(localStorage.getItem('user_profile') || '{"name": "
 const DEEPSEEK_API_KEY = 'sk-a8bdaf6587624ff4a0ceb4d16c6ead80';
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
-// 系统提示词
-const SYSTEM_PROMPT = `你是DeepSeek AI，一个智能、有用、无害的AI助手。请遵循以下要求：
+// 默认系统提示词
+const DEFAULT_SYSTEM_PROMPT = `你是DeepSeek AI，一个智能、有用、无害的AI助手。请遵循以下要求：
 
 1. 保持友好、专业的对话风格
 2. 提供准确、有用的信息和建议
@@ -24,6 +24,12 @@ const SYSTEM_PROMPT = `你是DeepSeek AI，一个智能、有用、无害的AI�
 10.核心在于用明确有效的语言解决用户问题
 
 请根据用户的问题提供最佳的回答。`;
+
+// 获取当前系统提示词（优先使用用户自定义的）
+function getCurrentSystemPrompt() {
+    const customPrompt = localStorage.getItem('ai_custom_prompt');
+    return customPrompt || DEFAULT_SYSTEM_PROMPT;
+}
 
 // ========== 拖拽功能 ==========
 let draggedContent = '';
@@ -181,6 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadUserProfile();
     setupGraphDropZone();
     setupEventListeners();
+    setupAIAvatarClick();
     
     console.log('应用初始化完成');
     
@@ -585,7 +592,8 @@ function createMessageElement(content, role, timestamp) {
     const renderedContent = role === 'assistant' ? renderMarkdown(content) : escapeHtml(content);
     
     messageDiv.innerHTML = `
-        <div class="message-avatar">
+        <div class="message-avatar ${role === 'assistant' ? 'ai-avatar-clickable' : ''}" 
+             ${role === 'assistant' ? 'title="点击自定义AI回复风格" style="cursor: pointer;"' : ''}>
             ${avatar}
         </div>
         <div class="message-content" ${role === 'assistant' ? 'draggable="true"' : ''}>
@@ -717,7 +725,7 @@ async function sendMessage(messageText = null) {
     const requestData = {
         model: "deepseek-chat",
         messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: getCurrentSystemPrompt() },
             ...conversation.messages.map(msg => ({
                 role: msg.role,
                 content: msg.content
@@ -1069,4 +1077,93 @@ function testEnterKeyFunction() {
     } else {
         console.error('❌ 测试失败：找不到输入框');
     }
+}
+
+// ========== AI智能体自定义功能 ==========
+function openAIPromptModal() {
+    const modal = document.getElementById('aiPromptModal');
+    const textarea = document.getElementById('aiCustomPrompt');
+    
+    // 加载当前自定义prompt或默认prompt
+    const currentPrompt = localStorage.getItem('ai_custom_prompt') || DEFAULT_SYSTEM_PROMPT;
+    textarea.value = currentPrompt;
+    
+    modal.classList.add('show');
+    textarea.focus();
+}
+
+function closeAIPromptModal() {
+    const modal = document.getElementById('aiPromptModal');
+    modal.classList.remove('show');
+}
+
+function saveAIPrompt(event) {
+    event.preventDefault();
+    
+    const textarea = document.getElementById('aiCustomPrompt');
+    const customPrompt = textarea.value.trim();
+    
+    if (customPrompt) {
+        localStorage.setItem('ai_custom_prompt', customPrompt);
+        showPromptNotification('✅ AI回复风格已保存！新的对话将使用自定义风格。');
+    } else {
+        localStorage.removeItem('ai_custom_prompt');
+        showPromptNotification('🔄 已恢复默认AI回复风格。');
+    }
+    
+    closeAIPromptModal();
+}
+
+function resetAIPrompt() {
+    if (confirm('确定要重置为默认AI回复风格吗？')) {
+        const textarea = document.getElementById('aiCustomPrompt');
+        textarea.value = DEFAULT_SYSTEM_PROMPT;
+        localStorage.removeItem('ai_custom_prompt');
+        showPromptNotification('🔄 已重置为默认AI回复风格。');
+    }
+}
+
+function showPromptNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'prompt-notification';
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        z-index: 10000;
+        font-size: 14px;
+        animation: slideInRight 0.3s ease-out;
+        max-width: 300px;
+        word-wrap: break-word;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// 为AI头像添加点击事件
+function setupAIAvatarClick() {
+    // 监听动态生成的AI头像点击事件
+    document.addEventListener('click', function(e) {
+        // 检查是否点击了AI消息的头像
+        if (e.target.closest('.message.assistant .message-avatar')) {
+            e.preventDefault();
+            e.stopPropagation();
+            openAIPromptModal();
+        }
+    });
 } 

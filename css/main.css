@@ -340,6 +340,37 @@ body {
     color: #FEF2F2;
 }
 
+.action-btn.ai-custom-btn {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white;
+    border: 2px solid rgba(16, 185, 129, 0.3);
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn.ai-custom-btn:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    border-color: rgba(16, 185, 129, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.action-btn.ai-custom-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.action-btn.ai-custom-btn:hover::before {
+    left: 100%;
+}
+
 .sidebar-footer {
     text-align: center;
     font-size: 12px;
@@ -1319,4 +1350,44 @@ body {
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
+}
+
+/* AI头像点击效果 */
+.message.assistant .message-avatar.ai-avatar-clickable {
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.message.assistant .message-avatar.ai-avatar-clickable:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+}
+
+.message.assistant .message-avatar.ai-avatar-clickable:active {
+    transform: scale(1.05);
+}
+
+/* AI头像点击提示动画 */
+.message.assistant .message-avatar.ai-avatar-clickable::after {
+    content: '⚙️';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 12px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    background: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.message.assistant .message-avatar.ai-avatar-clickable:hover::after {
+    opacity: 1;
+    transform: scale(1.1);
 } 

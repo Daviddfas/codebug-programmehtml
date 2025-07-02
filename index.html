@@ -69,6 +69,9 @@
 
             <!-- 操作按钮区域 -->
             <div class="sidebar-actions">
+                <button class="action-btn ai-custom-btn" onclick="openAIPromptModal()">
+                    🤖 自定义AI风格
+                </button>
                 <button class="action-btn" onclick="clearCurrentChat()">清空当前对话</button>
                 <button class="action-btn" onclick="exportChat()">导出对话</button>
                 <button class="action-btn danger" onclick="deleteConversation(currentConversationId)">删除对话</button>
@@ -122,6 +125,45 @@
             <div></div>
         </div>
         <p>DeepSeek AI正在思考中...</p>
+    </div>
+
+    <!-- AI智能体自定义模态框 -->
+    <div class="ai-prompt-modal" id="aiPromptModal">
+        <div class="ai-prompt-modal-content">
+            <div class="ai-prompt-modal-header">
+                <div class="ai-prompt-modal-avatar">
+                    🤖
+                </div>
+                <h2>自定义AI回复风格</h2>
+                <p>设置AI的回复风格和行为特征，让对话更符合您的需求</p>
+            </div>
+            
+            <form class="ai-prompt-form" onsubmit="saveAIPrompt(event)">
+                <div class="form-group">
+                    <label for="aiCustomPrompt">AI系统提示词</label>
+                    <textarea 
+                        id="aiCustomPrompt" 
+                        placeholder="请输入您希望AI具备的回复风格和行为特征..."
+                        rows="15"
+                    ></textarea>
+                    <div class="prompt-tips">
+                        <p><strong>💡 提示：</strong></p>
+                        <ul>
+                            <li>可以设置AI的语言风格（专业、幽默、温和等）</li>
+                            <li>可以定义AI的专业领域和知识偏好</li>
+                            <li>可以设置回复的详细程度和格式要求</li>
+                            <li>留空将使用默认的AI回复风格</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="ai-prompt-modal-actions">
+                    <button type="button" class="modal-btn secondary" onclick="resetAIPrompt()">重置为默认</button>
+                    <button type="button" class="modal-btn secondary" onclick="closeAIPromptModal()">取消</button>
+                    <button type="submit" class="modal-btn primary">保存设置</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- 个人主页模态框 -->
