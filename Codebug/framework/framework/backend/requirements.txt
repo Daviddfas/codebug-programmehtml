@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+typing_extensions
+langchain
+openai 
+requests
+tenacity
+pydantic
+python-multipart 
