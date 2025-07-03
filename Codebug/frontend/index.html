@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>DeepSeek AI 智能对话助手</title>
+    
+    <!-- CSS文件引入 -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/graph.css">
+    <link rel="stylesheet" href="css/modal.css">
+    
+    <!-- D3.js库 -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <!-- Markdown渲染 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    
+    <!-- LaTeX数学公式渲染 -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <!-- 代码高亮 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧边栏 -->
+        <div class="sidebar">
+            <!-- 侧边栏标题 -->
+            <div class="sidebar-header">
+                <h2>DeepSeek AI</h2>
+                <p>对话助手</p>
+            </div>
+            
+            <!-- 个人资料区域 -->
+            <div class="profile-section">
+                <div class="profile-header">
+                    <div class="profile-avatar" onclick="openProfileModal()">
+                        <span id="profileAvatarText">👤</span>
+                        <img id="profileAvatarImg" style="display: none;" />
+                        <input type="file" id="profileAvatarUpload" style="display: none;" accept="image/*" onchange="handleAvatarUpload(event)">
+                    </div>
+                    <div class="profile-info">
+                        <h3 id="profileName">用户</h3>
+                        <span class="profile-status" id="profileStatus" onclick="toggleStatus()">在线</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 对话列表区域 -->
+            <div class="conversations-section">
+                <div class="conversations-header">
+                    <h4>对话历史</h4>
+                    <button class="new-chat-btn" onclick="startNewConversation()">新对话</button>
+                </div>
+                <div class="conversation-list">
+                    <div id="conversationsList">
+                        <!-- 对话列表将动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮区域 -->
+            <div class="sidebar-actions">
+                <button class="action-btn" onclick="clearCurrentChat()">清空当前对话</button>
+                <button class="action-btn" onclick="exportChat()">导出对话</button>
+                <button class="action-btn danger" onclick="deleteConversation(currentConversationId)">删除对话</button>
+            </div>
+
+            <!-- 版权信息 -->
+            <div class="sidebar-footer">
+                © 2024 DeepSeek AI
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <!-- 聊天头部 -->
+            <div class="chat-header">
+                <h1 id="currentTitle">什么是vue</h1>
+            </div>
+            
+            <!-- 聊天内容分栏 -->
+            <div class="chat-area">
+                <!-- 左侧对话区 -->
+                <div class="chat-messages-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- 对话消息将动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 右侧动态图区 -->
+                <div class="graph-section">
+                    <div id="graph-container">
+                        <!-- D3.js图表将在这里渲染 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 输入区域 -->
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <textarea id="chatInput" class="chat-input" placeholder="输入您的消息..." rows="1"></textarea>
+                    <button id="sendBtn" class="send-btn">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div class="loading" id="loading">
+        <div class="loading-dots">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+        <p>DeepSeek AI正在思考中...</p>
+    </div>
+
+    <!-- 个人主页模态框 -->
+    <div class="profile-modal" id="profileModal">
+        <div class="profile-modal-content">
+            <div class="profile-modal-header">
+                <div class="profile-modal-avatar" onclick="document.getElementById('modalAvatarUpload').click()">
+                    <span id="modalAvatarText">👤</span>
+                    <img id="modalAvatarImg" style="display: none;" />
+                    <input type="file" id="modalAvatarUpload" style="display: none;" accept="image/*" onchange="handleModalAvatarUpload(event)">
+                </div>
+                <h2>个人资料</h2>
+            </div>
+            
+            <form class="profile-form" onsubmit="saveProfile(event)">
+                <div class="form-group">
+                    <label for="userName">用户名</label>
+                    <input type="text" id="userName" placeholder="请输入用户名" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="userEmail">邮箱</label>
+                    <input type="email" id="userEmail" placeholder="请输入邮箱">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userBio">个人简介</label>
+                    <textarea id="userBio" placeholder="介绍一下自己..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="userLocation">所在地</label>
+                    <input type="text" id="userLocation" placeholder="请输入所在地">
+                </div>
+                
+                <div class="profile-modal-actions">
+                    <button type="button" class="modal-btn secondary" onclick="closeProfileModal()">取消</button>
+                    <button type="submit" class="modal-btn primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MathJax配置 -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            }
+        };
+    </script>
+
+    <!-- JavaScript文件引入 -->
+    <script>
+        // 定义API密钥变量以避免错误
+        window.DEEPSEEK_API_KEY = 'sk-placeholder-key-for-compatibility';
+    </script>
+    <script src="js/app.js"></script>
+    <script src="js/graph.js"></script>
+    <script src="js/backend-adapter.js"></script>
+</body>
+</html> 
